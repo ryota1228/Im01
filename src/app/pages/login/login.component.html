@@ -1,0 +1,25 @@
+<h2>ログイン</h2>
+
+<form (ngSubmit)="login()">
+  <label>Email:
+    <input type="email" [(ngModel)]="email" name="email" required />
+  </label>
+
+  <label>Password:
+    <input
+      [type]="showPassword ? 'text' : 'password'"
+      [(ngModel)]="password"
+      name="password"
+      required
+    />
+    <button type="button" (click)="togglePassword()">
+      {{ showPassword ? '🙈' : '👁️' }}
+    </button>
+  </label>
+
+  <button type="submit">ログイン</button>
+</form>
+
+<hr />
+
+<button routerLink="/register">新規登録</button>
