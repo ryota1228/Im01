@@ -16,7 +16,7 @@ export class LoginComponent {
   showPassword = false;
 
   constructor(
-    private authService: AuthService, // ← AuthService を注入
+    private authService: AuthService,
     private router: Router
   ) {}
 
@@ -38,4 +38,18 @@ export class LoginComponent {
       }
     }
   }
+  async onGoogleLoginClick() {
+    try {
+      const result = await this.authService.loginWithGoogle();
+      console.log('ログイン成功:', result.user);
+      this.router.navigate(['/']);
+    } catch (err) {
+      console.error('ログイン失敗:', err);
+    }
+  }
+  passwordVisible = false;
+
+togglePasswordVisibility() {
+  this.passwordVisible = !this.passwordVisible;
+}
 }
