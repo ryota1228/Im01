@@ -15,7 +15,7 @@
     <label>期限</label>
     <input
       type="date"
-      [ngModel]="task.dueDate?.toDate() | date: 'yyyy-MM-dd'"
+      [ngModel]="dueDateString"
       (ngModelChange)="onDueDateChange($event)"
     />
   </div>

@@ -15,6 +15,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { FilterDialogComponent } from '../../components/filter-dialog/filter-dialog.component';
+import { TaskPanelService } from '../../services/task-panel.service';
 @Component({
   selector: 'app-project',
   standalone: true,
@@ -51,7 +52,8 @@ export class ProjectComponent implements OnInit {
     private route: ActivatedRoute,
     private firestoreService: FirestoreService,
     private firestore: Firestore,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private taskPanelService: TaskPanelService
   ) {}
 
   sortTasks(tasks: Task[]): Task[] {
@@ -95,9 +97,9 @@ export class ProjectComponent implements OnInit {
   }
 
   openTaskPanel(task: Task): void {
-    if (!this.projectId) return;
     console.log('[DEBUG] emit openTask to AppComponent:', task, this.projectId);
-    this.openTask.emit({ task, projectId: this.projectId });
+    if (!this.projectId) return;
+    this.taskPanelService.open(task, this.projectId);
   }
 
   toggleSection(title: string): void {

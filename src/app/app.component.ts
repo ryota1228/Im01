@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Task } from './models/task.model';
-import { TaskdetailComponent } from './components/taskdetail/taskdetail.component';
 import { CommonModule } from '@angular/common';
 
 
@@ -10,9 +9,8 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [
     CommonModule,
-    RouterOutlet,
-    TaskdetailComponent
-],
+    RouterOutlet
+  ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })

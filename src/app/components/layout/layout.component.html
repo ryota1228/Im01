@@ -80,6 +80,12 @@
       <router-outlet></router-outlet>
     </main>
   </div>
+  
+  <app-taskdetail
+    *ngIf="isTaskPanelOpen"
+    [task]="selectedTask!"
+    [projectId]="projectId!"
+    (closed)="closePanel()"/>
 </div>
 
 
