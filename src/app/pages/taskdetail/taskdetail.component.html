@@ -1,0 +1,42 @@
+<div *ngIf="task === null">
+  <p>タスクが見つかりませんでした。</p>
+</div>
+
+<div *ngIf="task === undefined">
+  <p>読み込み中...</p>
+</div>
+
+<div class="task-detail" *ngIf="task">
+  <button (click)="goBackToProject()">← プロジェクトに戻る</button>
+  
+  <h2>
+    <input [(ngModel)]="task.title" placeholder="タイトル" />
+  </h2>
+
+  <p>
+    <label>担当:</label>
+    <input [(ngModel)]="task.assignee" />
+  </p>
+
+  <p>
+    <label>期限:</label>
+    <input type="date" [(ngModel)]="dueDateString" />
+  </p>
+
+  <p>
+    <label>状態:</label>
+    <select [(ngModel)]="task.status">
+      <option>未着手</option>
+      <option>進行中</option>
+      <option>完了</option>
+    </select>
+  </p>
+
+  <p>
+    <label>セクション:</label>
+    <input [(ngModel)]="task.section" />
+  </p>
+
+  <button (click)="saveTask()">保存</button>
+  <button (click)="deleteTask()">削除</button>
+</div>

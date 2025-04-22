@@ -1,0 +1,63 @@
+<div class="dialog-wrapper">
+    <h2 class="dialog-title">
+      確認
+    </h2>
+
+    <p class="dialog-message">
+      本当にログアウトしますか？
+    </p>
+
+    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+      <div class="btn-cancel" (click)="onCancel()">
+        キャンセル
+      </div>
+
+      <div class="btn-confirm" (click)="onConfirm()">
+        ログアウト
+      </div>
+    </div>
+</div>
+
+<!-- <label>状態:
+    <select [(ngModel)]="selectedStatus">
+      <option value="すべて">すべて</option>
+      <option value="未着手">未着手</option>
+      <option value="進行中">進行中</option>
+      <option value="完了">完了</option>
+    </select>
+  </label>
+
+  <label>セクション:
+    <select [(ngModel)]="selectedSection">
+      <option *ngFor="let sec of availableSections" [value]="sec">{{ sec }}</option>
+    </select>
+  </label>
+
+  <label>期限：
+    <select [(ngModel)]="selectedSort">
+      <option value="期限昇順" [selected]="selectedSort === '期限昇順'">昇順</option>
+      <option value="期限降順" [selected]="selectedSort === '期限降順'">降順</option>
+    </select>
+  </label>
+
+  <ng-container *ngIf="!isSectionCollapsed(entry.section.title)">
+    <div
+      *ngFor="let task of entry.tasks"
+      [hidden]="
+      (selectedStatus !== 'すべて' && task.status !== selectedStatus) ||
+      (hideCompleted && task.status === '完了') ||
+      (!task.title.includes(searchKeyword) && !task.assignee.includes(searchKeyword))"
+      class="task-card"
+      [ngClass]="'status-' + task.status"
+      (click)="openTaskPanel(task)"
+    >
+      <div class="task-title">{{ task.title }}</div>
+      <div class="task-meta">
+        <span>担当: {{ task.assignee }}</span>
+        <span>期限: {{ task.dueDate?.toDate() | date: 'yyyy-MM-dd' }}</span>
+        <span>状態: {{ task.status }}</span>
+      </div>
+    </div>
+  </ng-container>
+
+ -->

@@ -1,0 +1,87 @@
+<div class="layout">
+  <header class="topbar">
+    <button class="toggle-btn" (click)="toggleSidebar()">
+      ☰
+    </button>
+
+    <div class="topbar-content">
+      <ng-container *ngIf="user$ | async as user">
+        <span class="user-email">
+          {{ user.email }}
+        </span>
+
+        <button class="logout-btn" (click)="logout()">
+          ログアウト
+        </button>
+      </ng-container>
+    </div>
+  </header>
+
+  <div class="body-row">
+    <aside class="sidebar" [class.closed]="!sidebarOpen">
+      <div class="sidebar-content">
+        <div class="sidebar-menu-list">
+    
+          <a href="/" class="sidebar-link">
+            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: white; display: inline-block; vertical-align: middle; padding-right: 8px;">
+              <path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1h-6v-6H10v6H4a1 1 0 0 1-1-1V9.5z"/>
+            </svg>
+
+            <span>ホーム</span>
+          </a>
+    
+          <a href="['/project', project.id]" class="sidebar-link">
+            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: white; display: inline-block; vertical-align: middle; padding-right: 8px;">
+              <path d="M3 5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>
+            </svg>
+
+            <span>プロジェクト</span>
+          </a>
+
+          <a href="/teams" class="sidebar-link">
+            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: white; display: inline-block; vertical-align: middle; padding-right: 8px;">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+
+            <span>チーム</span>
+          </a>
+    
+          <div href="#!" class="sidebar-link" (click)="toggleSection('insight')">
+            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: white; display: inline-block; vertical-align: middle; padding-right: 8px;">
+              <path d="M8 5l8 7-8 7z" *ngIf="openedSection !== 'insight'" />
+              <path d="M5 8l7 8 7-8z" *ngIf="openedSection === 'insight'" />
+            </svg>
+
+            <span>プロジェクト</span>
+          </div>
+    
+        </div>
+    
+        <div *ngIf="openedSection === 'insight'" class="sidebar-menu-list accordion-body">
+          <a href="project/sample-project" class="sidebar-link sidebar-sub">
+            サンプルPJ1
+          </a>
+
+          <a href="#" class="sidebar-link sidebar-sub">
+            ポートフォリオポートフォリオ
+          </a>
+          
+          <a href="#" class="sidebar-link sidebar-sub">
+            ゴール
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content-scroll">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+
+
+

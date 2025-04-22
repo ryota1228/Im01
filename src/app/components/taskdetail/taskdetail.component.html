@@ -1,0 +1,41 @@
+<div class="task-detail-panel">
+  <button class="back-button" (click)="onClosePanel()">← プロジェクトに戻る</button>
+
+  <div class="form-group">
+    <label>タイトル</label>
+    <input [(ngModel)]="task.title" type="text" />
+  </div>
+
+  <div class="form-group">
+    <label>担当</label>
+    <input [(ngModel)]="task.assignee" type="text" />
+  </div>
+
+  <div class="form-group">
+    <label>期限</label>
+    <input
+      type="date"
+      [ngModel]="task.dueDate?.toDate() | date: 'yyyy-MM-dd'"
+      (ngModelChange)="onDueDateChange($event)"
+    />
+  </div>
+
+  <div class="form-group">
+    <label>状態</label>
+    <select [(ngModel)]="task.status">
+      <option value="未着手">未着手</option>
+      <option value="進行中">進行中</option>
+      <option value="完了">完了</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>セクション</label>
+    <input [(ngModel)]="task.section" type="text" />
+  </div>
+
+  <div class="form-actions">
+    <button (click)="saveTask()">保存</button>
+    <button (click)="deleteTask()">削除</button>
+  </div>
+</div>

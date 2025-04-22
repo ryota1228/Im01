@@ -1,0 +1,98 @@
+<div class="project-wrapper">
+<div class="filter-controls">
+  <label><input type="text" [(ngModel)]="searchKeyword" placeholder="タイトル/担当で検索" /></label>
+
+  <label>状態:
+    <select [(ngModel)]="selectedStatus">
+      <option value="すべて">すべて</option>
+      <option value="未着手">未着手</option>
+      <option value="進行中">進行中</option>
+      <option value="完了">完了</option>
+    </select>
+  </label>
+
+  <label>セクション:
+    <select [(ngModel)]="selectedSection">
+      <option *ngFor="let sec of availableSections" [value]="sec">{{ sec }}</option>
+    </select>
+  </label>
+
+  <label>期限：
+    <select [(ngModel)]="selectedSort">
+      <option value="期限昇順" [selected]="selectedSort === '期限昇順'">昇順</option>
+      <option value="期限降順" [selected]="selectedSort === '期限降順'">降順</option>
+    </select>
+  </label>
+
+  <button class="sort-btn" (click)="filterDialogOpen()">
+    フィルター
+  </button>
+
+  <label>
+    <input type="checkbox" [(ngModel)]="hideCompleted" />
+    完了済みを非表示
+  </label>
+</div>
+
+<div *ngIf="currentView === 'list'" class="task-list-view" #scrollContainer>
+  
+
+  <div
+    cdkDropList
+    class="section-drop-list"
+    [cdkDropListData]="sectionsWithTasks"
+    (cdkDropListDropped)="onSectionDrop($event)"
+  >
+    <div
+      *ngFor="let entry of sectionsWithTasks"
+      cdkDrag
+      class="task-section-wrapper"
+      [ngClass]="{ 'dragging': entry.section === draggedSection }"
+      [hidden]="selectedSection !== 'すべて' && entry.section.title !== selectedSection"
+    >
+      <div class="task-section">
+        <div class="section-header">
+          <div class="task-header">
+            <div class="task-header-title" (click)="toggleSection(entry.section.title)">
+              <span class="arrow">{{ isSectionCollapsed(entry.section.title) ? '▶' : '▼' }}</span>
+              {{ entry.section.title }}
+            </div>
+            <button class="task-header-button" (click)="startAddTask(entry.section.title)">＋タスク追加</button>
+          </div>
+        </div>
+
+        <div *ngIf="addingSection === entry.section.title" class="add-task-form">
+          <input type="text" placeholder="タイトル" [(ngModel)]="newTask.title" class="add-task-title" />
+          <input type="text" placeholder="担当者" [(ngModel)]="newTask.assignee" class="add-task-assignee" />
+          <input type="datetime-local" [(ngModel)]="newTask.dueDate" class="add-task-due-date" />
+          <button (click)="saveTask()" class="add-task-save-button">保存</button>
+          <button (click)="cancelAddTask()" class="add-task-cancel-button">キャンセル</button>
+        </div>
+
+        <ng-container *ngIf="!isSectionCollapsed(entry.section.title)">
+          <div
+            *ngFor="let task of entry.tasks"
+            [hidden]="
+            (selectedStatus !== 'すべて' && task.status !== selectedStatus) ||
+            (hideCompleted && task.status === '完了') ||
+            (!task.title.includes(searchKeyword) && !task.assignee.includes(searchKeyword))"
+            class="task-card"
+            [ngClass]="'status-' + task.status"
+            (click)="openTaskPanel(task)"
+          >
+            <div class="task-title">{{ task.title }}</div>
+            <div class="task-meta">
+              <span>担当: {{ task.assignee }}</span>
+              <span>期限: {{ task.dueDate?.toDate() | date: 'yyyy-MM-dd' }}</span>
+              <span>状態: {{ task.status }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- <app-project (openTask)="openTaskPanel($event.task, $event.projectId)"></app-project> -->
+  

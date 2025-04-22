@@ -1,0 +1,82 @@
+.dialog-wrapper {
+  padding: 24px;
+  max-width: 360px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.dialog-title {
+  margin-bottom: 16px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #111827;
+}
+
+.dialog-message {
+  margin-bottom: 24px;
+  font-size: 15px;
+  color: #4b5563;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.dialog-actions button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.dialog-actions button:first-child {
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+.dialog-actions button:first-child:hover {
+  background-color: #d1d5db;
+}
+
+.dialog-actions button:last-child {
+  background-color: #ef4444;
+  color: white;
+}
+
+.dialog-actions button:last-child:hover {
+  background-color: #dc2626;
+}
+
+.btn-cancel,
+.btn-confirm {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  min-width: 80px;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.btn-cancel {
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+.btn-cancel:hover {
+  background-color: #d1d5db;
+}
+
+.btn-confirm {
+  background-color: #ef4444;
+  color: white;
+}
+
+.btn-confirm:hover {
+  background-color: #dc2626;
+}
