@@ -1,14 +1,17 @@
-<div class="dialog-container">
+<div class="dialog-wrapper">
     <h2 class="dialog-title">
       確認
     </h2>
+
     <p class="dialog-message">
       本当にログアウトしますか？
     </p>
+
     <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
       <div class="btn-cancel" (click)="onCancel()">
         キャンセル
       </div>
+
       <div class="btn-confirm" (click)="onConfirm()">
         ログアウト
       </div>

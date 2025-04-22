@@ -1,12 +1,20 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../services/auth.service'; // 追加
+import { AuthService } from '../../services/auth.service';
+import {
+  MatDialog,
+  MatDialogModule
+} from '@angular/material/dialog';
+import { ErrorDialogComponent } from '../../components/error-dialog/error-dialog.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [
+    FormsModule,
+    MatDialogModule
+  ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
 })
@@ -17,7 +25,8 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {}
 
   togglePassword() {
@@ -31,10 +40,27 @@ export class LoginComponent {
       this.router.navigate(['/']);
     } catch (error: any) {
       console.error('ログインエラー:', error.code);
+      
       if (error.code === 'auth/invalid-credential') {
-        alert('メールアドレスまたはパスワードが違います');
+        this.dialog.open(ErrorDialogComponent, {
+          disableClose: true,
+          data: { message: 'メールアドレスまたはパスワードが違います。' }
+        });
+      } else if (error.code === 'auth/invalid-email') {
+        this.dialog.open(ErrorDialogComponent, {
+          disableClose: true,
+          data: { message: 'メールアドレスを入力してください。' }
+        });
+      } else if (error.code === 'auth/missing-password') {
+        this.dialog.open(ErrorDialogComponent, {
+          disableClose: true,
+          data: { message: 'パスワードを入力してください。' }
+        });
       } else {
-        alert('ログインに失敗しました: ' + error.code);
+        this.dialog.open(ErrorDialogComponent, {
+          disableClose: true,
+          data: { message: 'ログインに失敗しました: ' + error.code }
+        });
       }
     }
   }

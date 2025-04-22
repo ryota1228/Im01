@@ -1,0 +1,15 @@
+<div class="email-dialog">
+    <h2 class="dialog-title">このアドレスは既に登録されています</h2>
+    <p class="dialog-message">
+      ログイン/パスワードのリセットをお試しいただくか<br />
+      別のメールアドレスでご登録お願いします
+    </p>
+  
+    <div class="dialog-actions">
+      <div class="exists-login-button" (click)="goTo('/login')">ログイン</div>
+
+      <div class="exists-passwordreset-button" (click)="goTo('/passwordreset')">パスワード再設定</div>
+      
+      <div class="exists-register-button" (click)="goTo('/register')">新規登録に戻る</div>
+    </div>
+  </div>

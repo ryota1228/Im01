@@ -2,6 +2,7 @@ import {
   Firestore,
   collection,
   collectionData,
+  CollectionReference,
   doc,
   getDoc,
   setDoc,
@@ -14,13 +15,19 @@ import {
   docData
 } from '@angular/fire/firestore';
 
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { Observable, tap } from 'rxjs';
 import { UpdateData } from '@angular/fire/firestore';
+import { Task } from '../models/task.model';
+import { taskConverter } from '../models/task.model';
+import { Section } from '../models/section.model';
+
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
-  constructor(private firestore: Firestore) {}
+  constructor(
+    private firestore: Firestore = inject(Firestore)
+  ) {}
 
   getCollection<T extends DocumentData>(path: string): Observable<T[]> {
     const ref = collection(this.firestore, path) as any;
@@ -66,4 +73,33 @@ export class FirestoreService {
     const ref = doc(this.firestore, path);
     return docData(ref) as Observable<T>;
   }
+
+  getTasks(): Observable<Task[]> {
+    const tasksRef = collection(this.firestore, 'tasks') as CollectionReference<Task>;
+    const converted = tasksRef.withConverter(taskConverter);
+    return collectionData(converted, { idField: 'id' }).pipe(
+      tap(data => console.log('[DEBUG] Firestoreデータ:', data))  // ←ここをpipeで繋ぐ
+    ) as Observable<Task[]>;
+  }
+
+  getTasksByProjectId(projectId: string): Observable<Task[]> {
+    const taskCollection = collection(this.firestore, `projects/${projectId}/tasks`);
+    return collectionData(taskCollection, { idField: 'id' }) as Observable<Task[]>;
+  }
+
+  addTask(projectId: string, task: any): Promise<void> {
+    const taskCollection = collection(this.firestore, `projects/${projectId}/tasks`);
+    return addDoc(taskCollection, task).then(() => {});
+  }
+
+  getSections(projectId: string): Observable<Section[]> {
+    const sectionRef = collection(this.firestore, `projects/${projectId}/sections`);
+    return collectionData(sectionRef, { idField: 'id' }) as Observable<Section[]>;
+  }
+
+  addSection(projectId: string, section: { title: string; order: number }) {
+    const sectionRef = collection(this.firestore, `projects/${projectId}/sections`);
+    return addDoc(sectionRef, section);
+  }
+  
 }

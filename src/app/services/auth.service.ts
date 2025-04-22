@@ -23,9 +23,6 @@ export class AuthService {
   constructor(private auth: Auth, private userService: UserService) {
     onAuthStateChanged(this.auth, (user) => {
       this.currentUserSubject.next(user);
-      // if (user) {
-      //   this.userService.createUserProfile(user);
-      // }
     });
   }
 
@@ -46,12 +43,8 @@ export class AuthService {
     return signInWithPopup(this.auth, provider);
   }
 
-  // logout(): Promise<void> {
-  //   return signOut(this.auth);
-  // }
-
   logout(): Promise<void> {
-    return signOut(this.auth); // Firebase Auth の signOut は Promise を返す
+    return signOut(this.auth);
   }
 
   sendPasswordReset(email: string): Promise<void> {

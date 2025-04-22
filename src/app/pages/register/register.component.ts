@@ -3,6 +3,9 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
+import { EmailExistsDialogComponent } from '../../components/email-exists-dialog/email-exists-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
+import { ErrorDialogComponent } from '../../components/error-dialog/error-dialog.component';
 
 @Component({
   selector: 'app-register',
@@ -24,9 +27,11 @@ export class RegisterComponent {
     this.showPassword = !this.showPassword;
   }
 
-  constructor(private authService: AuthService, private router: Router) {}
-
-  
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private dialog: MatDialog
+  ) {}
 
   async register() {
     try {
@@ -37,16 +42,34 @@ export class RegisterComponent {
       console.error('登録エラー:', error.code);
       switch (error.code) {
         case 'auth/email-already-in-use':
-          alert('このメールアドレスは既に登録されています。');
+          this.dialog.open(EmailExistsDialogComponent, {
+            disableClose: true,
+            width: '400px'
+          });
           break;
         case 'auth/invalid-email':
-          alert('メールアドレスの形式が正しくありません。');
+          this.dialog.open(ErrorDialogComponent, {
+            disableClose: true,
+            data: { message: 'メールアドレスの形式が正しくありません。' }
+          });
           break;
         case 'auth/weak-password':
-          alert('パスワードが弱すぎます（6文字以上にしてください）。');
+          this.dialog.open(ErrorDialogComponent, {
+            disableClose: true,
+            data: { message: 'パスワードが弱すぎます（6文字以上にしてください）。' }
+          });
           break;
+        case 'auth/missing-password':
+            this.dialog.open(ErrorDialogComponent, {
+              disableClose: true,
+              data: { message: 'パスワードを入力してください。' }
+            });
+            break;
         default:
-          alert('登録に失敗しました: ' + error.message);
+          this.dialog.open(ErrorDialogComponent, {
+            disableClose: true,
+            data: { message: '登録に失敗しました: ' + error.message }
+          });
       }
     }
   }

@@ -11,7 +11,12 @@ import { LogoutDialogComponent } from '../logout-dialog/logout-dialog.component'
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, MatDialogModule, MatButtonModule],
+  imports: [
+    RouterOutlet,
+    CommonModule,
+    MatDialogModule,
+    MatButtonModule
+  ],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.css']
 })
@@ -34,13 +39,12 @@ export class LayoutComponent {
 
   logout() {
     const dialogRef = this.dialog.open(LogoutDialogComponent);
-
-  dialogRef.afterClosed().subscribe(result => {
-    if (result === true) {
-      this.authService.logout();
-      this.router.navigate(['/login']);
-    }
-  });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.authService.logout();
+        this.router.navigate(['/login']);
+      }
+    });
   }
 
   openedSection: string | null = null;
