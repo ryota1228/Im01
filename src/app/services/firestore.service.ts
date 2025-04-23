@@ -21,6 +21,7 @@ import { UpdateData } from '@angular/fire/firestore';
 import { Task } from '../models/task.model';
 import { taskConverter } from '../models/task.model';
 import { Section } from '../models/section.model';
+import { firstValueFrom } from 'rxjs';
 
 
 @Injectable({ providedIn: 'root' })
@@ -87,6 +88,13 @@ export class FirestoreService {
     return collectionData(taskCollection, { idField: 'id' }) as Observable<Task[]>;
   }
 
+  async getTasksByProjectIdOnce(projectId: string): Promise<Task[]> {
+    const taskCollection = collection(this.firestore, `projects/${projectId}/tasks`);
+    return await firstValueFrom(
+      collectionData(taskCollection, { idField: 'id' }) as Observable<Task[]>
+    );
+  }
+
   addTask(projectId: string, task: any): Promise<void> {
     const taskCollection = collection(this.firestore, `projects/${projectId}/tasks`);
     return addDoc(taskCollection, task).then(() => {});
@@ -95,6 +103,13 @@ export class FirestoreService {
   getSections(projectId: string): Observable<Section[]> {
     const sectionRef = collection(this.firestore, `projects/${projectId}/sections`);
     return collectionData(sectionRef, { idField: 'id' }) as Observable<Section[]>;
+  }
+
+  async getSectionsOnce(projectId: string): Promise<Section[]> {
+    const sectionRef = collection(this.firestore, `projects/${projectId}/sections`);
+    return await firstValueFrom(
+      collectionData(sectionRef, { idField: 'id' }) as Observable<Section[]>
+    );
   }
 
   addSection(projectId: string, section: { title: string; order: number }) {

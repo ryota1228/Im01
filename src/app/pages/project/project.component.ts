@@ -6,7 +6,12 @@ import { Section } from '../../models/section.model';
 import { FirestoreService } from '../../services/firestore.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CdkDragDrop, moveItemInArray, DragDropModule } from '@angular/cdk/drag-drop';
+import {
+  CdkDragDrop,
+  moveItemInArray,
+  transferArrayItem,
+  DragDropModule,
+} from '@angular/cdk/drag-drop';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -37,18 +42,19 @@ export class ProjectComponent implements OnInit {
   newTask: Partial<Task> = { title: '', assignee: '', dueDate: undefined };
   collapsedSections = new Set<string>();
   draggedSection: Section | null = null;
-  sectionsWithTasks: { section: Section; tasks: Task[]; isEditing?: boolean }[] = [];
-  sectionOrder: Section[] = [];
-
   editingSectionId: string | null = null;
   editingSectionTitle: string = '';
+
+  
+  sectionsWithTasks: { section: Section; tasks: Task[] }[] = [];
+  sectionOrder: Section[] = [];
 
   constructor(
     private route: ActivatedRoute,
     private firestoreService: FirestoreService,
     private firestore: Firestore,
     private dialog: MatDialog,
-    private taskPanelService: TaskPanelService
+    private taskPanelService: TaskPanelService,
   ) {}
 
   ngOnInit(): void {
@@ -90,60 +96,45 @@ export class ProjectComponent implements OnInit {
         this.sectionsWithTasks = this.sectionOrder.map(sec => ({
           section: sec,
           tasks: grouped[sec.title] || [],
-          isEditing: false,
         }));
       });
     });
+  }
+
+  toggleSection(title: string): void {
+    if (this.collapsedSections.has(title)) {
+      this.collapsedSections.delete(title);
+    } else {
+      this.collapsedSections.add(title);
+    }
   }
 
   enableSectionEdit(section: Section): void {
     this.editingSectionId = section.id;
     this.editingSectionTitle = section.title;
   }
-  
-  async saveEditedSectionTitle(section: Section, newTitle: string): Promise<void> {
-    if (!this.projectId || !newTitle.trim()) return;
-  
-    const oldTitle = section.title;
-    const trimmedTitle = newTitle.trim();
-  
-    const sectionRef = doc(this.firestore, `projects/${this.projectId}/sections/${section.id}`);
-    await updateDoc(sectionRef, { title: trimmedTitle });
-  
-    const tasks = await firstValueFrom(this.firestoreService.getTasksByProjectId(this.projectId));
-    const updatePromises = tasks
-      .filter(task => task.section === oldTitle)
-      .map(task => {
-        const taskRef = doc(this.firestore, `projects/${this.projectId}/tasks/${task.id}`);
-        return updateDoc(taskRef, { section: trimmedTitle });
-      });
-  
-    await Promise.all(updatePromises);
-  
-    this.loadSectionsAndTasks(this.projectId!);
-    this.cancelEditSection();
-  }
-  
+
   cancelEditSection(): void {
     this.editingSectionId = null;
     this.editingSectionTitle = '';
   }
 
-  filterDialogOpen(): void {
-    const dialogRef = this.dialog.open(FilterDialogComponent, {
-      data: {
-        sections: this.availableSections.filter(s => s !== 'すべて'),
-        currentStatuses: this.selectedStatuses.includes('すべて') ? [] : this.selectedStatuses,
-        currentSections: this.selectedSections.includes('すべて') ? [] : this.selectedSections,
-      },
-    });
+  async saveEditedSectionTitle(section: Section, newTitle: string): Promise<void> {
+    const newTitleTrimmed = newTitle.trim();
+    if (!this.projectId || !newTitleTrimmed) return;
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.selectedStatuses = result.selectedStatuses.length > 0 ? result.selectedStatuses : ['すべて'];
-        this.selectedSections = result.selectedSections.length > 0 ? result.selectedSections : ['すべて'];
-      }
-    });
+    const oldTitle = section.title;
+    const ref = doc(this.firestore, `projects/${this.projectId}/sections/${section.id}`);
+    await updateDoc(ref, { title: newTitleTrimmed });
+
+    const tasksSnapshot = await this.firestoreService.getTasksByProjectIdOnce(this.projectId);
+    const updates = tasksSnapshot!
+      .filter(t => t.section === oldTitle)
+      .map(t => this.firestoreService.updateDocument(`projects/${this.projectId}/tasks/${t.id}`, { section: newTitleTrimmed }));
+
+    await Promise.all(updates);
+    this.cancelEditSection();
+    this.loadSectionsAndTasks(this.projectId);
   }
 
   onSectionDrop(event: CdkDragDrop<{ section: Section; tasks: Task[] }[]>): void {
@@ -157,11 +148,17 @@ export class ProjectComponent implements OnInit {
     Promise.all(updates).then(() => this.loadSectionsAndTasks(this.projectId!));
   }
 
-  toggleSection(title: string): void {
-    if (this.collapsedSections.has(title)) {
-      this.collapsedSections.delete(title);
+  onTaskDrop(event: CdkDragDrop<Task[]>, targetSectionTitle: string): void {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
-      this.collapsedSections.add(title);
+      transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
+      const movedTask = event.container.data[event.currentIndex];
+      if (movedTask && this.projectId) {
+        this.firestoreService.updateDocument(`projects/${this.projectId}/tasks/${movedTask.id}`, {
+          section: targetSectionTitle
+        });
+      }
     }
   }
 
@@ -200,4 +197,25 @@ export class ProjectComponent implements OnInit {
     if (!this.projectId) return;
     this.taskPanelService.openPanel(task, this.projectId);
   }
+
+  filterDialogOpen(): void {
+    const dialogRef = this.dialog.open(FilterDialogComponent, {
+      data: {
+        sections: this.availableSections.filter(s => s !== 'すべて'),
+        currentStatuses: this.selectedStatuses.includes('すべて') ? [] : this.selectedStatuses,
+        currentSections: this.selectedSections.includes('すべて') ? [] : this.selectedSections,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.selectedStatuses = result.selectedStatuses.length > 0 ? result.selectedStatuses : ['すべて'];
+        this.selectedSections = result.selectedSections.length > 0 ? result.selectedSections : ['すべて'];
+      }
+    });
+  }
+
+  get connectedDropListIds(): string[] {
+    return this.sectionsWithTasks.map(s => 'dropList-' + s.section.title);
+  }  
 }
