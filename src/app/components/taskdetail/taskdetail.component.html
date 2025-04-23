@@ -1,4 +1,4 @@
-<div class="task-detail-panel">
+<div class="task-detail-panel" *ngIf="task">
   <button class="back-button" (click)="onClosePanel()">← プロジェクトに戻る</button>
 
   <div class="form-group">
@@ -19,6 +19,8 @@
       (ngModelChange)="onDueDateChange($event)"
     />
   </div>
+
+  <!-- 期日データのやり取りでエラーでてるっぽい -->
 
   <div class="form-group">
     <label>状態</label>

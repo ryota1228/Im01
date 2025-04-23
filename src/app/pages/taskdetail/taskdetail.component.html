@@ -7,7 +7,7 @@
 </div>
 
 <div class="task-detail" *ngIf="task">
-  <button (click)="goBackToProject()">← プロジェクトに戻る</button>
+  <button (click)="onClosePanel()">← プロジェクトに戻る</button>
   
   <h2>
     <input [(ngModel)]="task.title" placeholder="タイトル" />

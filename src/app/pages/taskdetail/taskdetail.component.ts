@@ -1,66 +1,38 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Firestore, doc, getDoc, updateDoc, deleteDoc } from '@angular/fire/firestore';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Task } from '../../models/task.model';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { Firestore } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { DeleteConfirmDialogComponent } from '../../components/delete-confirm-dialog/delete-confirm-dialog.component';
 
 @Component({
   selector: 'app-taskdetail',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './taskdetail.component.html',
   styleUrls: ['./taskdetail.component.css'],
 })
-export class TaskdetailComponent implements OnInit {
-  @Input() task: Task | null = null;
-  @Input() projectId: string | null = null;
+export class TaskdetailComponent {
+  @Input() task!: Task;
+  @Input() projectId!: string;
   @Output() closed = new EventEmitter<void>();
 
-  taskId: string | null = null;
-  dueDateString: string = '';
+  constructor(private firestore: Firestore) {}
 
-  constructor(
-    private route: ActivatedRoute,
-    private firestore: Firestore,
-    private router: Router,
-    private dialog: MatDialog
-  ) {}
+  get dueDateString(): string {
+    return this.task?.dueDate
+      ? new Date(this.task.dueDate).toISOString().split('T')[0]
+      : '';
+  }
 
-  ngOnInit(): void {
-    if (this.task) {
-      const date = this.task.dueDate instanceof Date
-        ? this.task.dueDate
-        : this.task.dueDate?.toDate?.() ?? null;
-      this.dueDateString = date ? date.toISOString().split('T')[0] : '';
-      return;
-    }
-  
-    this.route.paramMap.subscribe(async params => {
-      this.projectId = params.get('projectId');
-      this.taskId = params.get('taskId');
-      if (this.projectId && this.taskId) {
-        const ref = doc(this.firestore, `projects/${this.projectId}/tasks/${this.taskId}`);
-        const snapshot = await getDoc(ref);
-        if (snapshot.exists()) {
-          this.task = snapshot.data() as Task;
-          const date = this.task.dueDate?.toDate?.();
-          this.dueDateString = date ? date.toISOString().split('T')[0] : '';
-        } else {
-          console.warn('タスクが存在しないか、読み込めませんでした');
-        }
-      }
-    });
+  onDueDateChange(dateStr: string) {
+    this.task.dueDate = dateStr ? new Date(dateStr) : null;
   }
 
   async saveTask(): Promise<void> {
-    if (!this.projectId || !this.taskId || !this.task) return;
+    if (!this.projectId || !this.task?.id) return;
 
-    this.task.dueDate = this.dueDateString ? new Date(this.dueDateString) : null;
-
-    const ref = doc(this.firestore, `projects/${this.projectId}/tasks/${this.taskId}`);
+    const ref = doc(this.firestore, `projects/${this.projectId}/tasks/${this.task.id}`);
     const updatedTask = {
       title: this.task.title,
       assignee: this.task.assignee,
@@ -71,26 +43,24 @@ export class TaskdetailComponent implements OnInit {
 
     await updateDoc(ref, updatedTask);
     console.log('[DEBUG] Task updated!');
-  }
+    this.closed.emit();
 
-  goBackToProject(): void {
-    if (this.projectId) {
-      this.router.navigate(['/project', this.projectId]);
-    }
   }
 
   async deleteTask(): Promise<void> {
-    if (!this.projectId || !this.taskId) return;
+    if (!this.task?.id || !this.projectId) return;
 
-    const dialogRef = this.dialog.open(DeleteConfirmDialogComponent);
-    const confirmed = await dialogRef.afterClosed().toPromise();
+    const taskRef = doc(this.firestore, `projects/${this.projectId}/tasks/${this.task.id}`);
+    try {
+      await deleteDoc(taskRef);
+      console.log('[DEBUG] Task deleted!');
+      this.closed.emit();
+    } catch (error) {
+      console.error('削除エラー:', error);
+    }
+  }
 
-    if (!confirmed) return;
-
-    const ref = doc(this.firestore, `projects/${this.projectId}/tasks/${this.taskId}`);
-    await deleteDoc(ref);
-    console.log('[DEBUG] Task deleted!');
-
-    this.router.navigate(['/project', this.projectId]);
+  onClosePanel(): void {
+    this.closed.emit();
   }
 }

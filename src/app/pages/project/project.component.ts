@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Firestore, doc, updateDoc } from '@angular/fire/firestore';
 import { Task } from '../../models/task.model';
@@ -16,10 +16,17 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { FilterDialogComponent } from '../../components/filter-dialog/filter-dialog.component';
 import { TaskPanelService } from '../../services/task-panel.service';
+
 @Component({
   selector: 'app-project',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule,MatDialogModule,MatButtonModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DragDropModule,
+    MatDialogModule,
+    MatButtonModule
+  ],
   templateUrl: './project.component.html',
   styleUrls: ['./project.component.css'],
 })
@@ -33,6 +40,7 @@ export class ProjectComponent implements OnInit {
   hideCompleted: boolean = false;
   availableSections: string[] = [];
   selectedSort: string = '期限昇順';
+  
 
   addingSection: string | null = null;
   newTask: Partial<Task> = {
@@ -46,25 +54,13 @@ export class ProjectComponent implements OnInit {
   sectionsWithTasks: { section: Section; tasks: Task[] }[] = [];
   sectionOrder: Section[] = [];
 
-  @Output() openTask = new EventEmitter<{ task: Task; projectId: string }>();
-
   constructor(
     private route: ActivatedRoute,
     private firestoreService: FirestoreService,
     private firestore: Firestore,
     private dialog: MatDialog,
-    private taskPanelService: TaskPanelService
+    private taskPanelService: TaskPanelService // ★追加
   ) {}
-
-  sortTasks(tasks: Task[]): Task[] {
-    return tasks.sort((a, b) => {
-      if (this.selectedSort === '期限昇順') {
-        return a.dueDate?.getTime() - b.dueDate?.getTime() || 0;
-      } else {
-        return b.dueDate?.getTime() - a.dueDate?.getTime() || 0;
-      }
-    });
-  }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -75,33 +71,12 @@ export class ProjectComponent implements OnInit {
     });
   }
 
-  loadSectionsAndTasks(projectId: string): void {
-    this.firestoreService.getSections(projectId).subscribe((sections) => {
-      this.sectionOrder = sections.sort((a, b) => a.order - b.order);
-      this.availableSections = ['すべて', ...sections.map((s) => s.title)];
-
-      this.firestoreService.getTasksByProjectId(projectId).subscribe((tasks) => {
-        const grouped: { [key: string]: Task[] } = {};
-        for (const task of tasks) {
-          const section = task.section || '未分類';
-          if (!grouped[section]) grouped[section] = [];
-          grouped[section].push(task);
-        }
-
-        this.sectionsWithTasks = this.sectionOrder.map((sec) => ({
-          section: sec,
-          tasks: grouped[sec.title] || [],
-        }));
-      });
-    });
-  }
-
   openTaskPanel(task: Task): void {
-    console.log('[DEBUG] emit openTask to AppComponent:', task, this.projectId);
     if (!this.projectId) return;
-    this.taskPanelService.open(task, this.projectId);
+    this.taskPanelService.openPanel(task, this.projectId); // ★ここをサービスに変更
   }
 
+  // 以下既存のコードはそのまま
   toggleSection(title: string): void {
     if (this.collapsedSections.has(title)) {
       this.collapsedSections.delete(title);
@@ -127,7 +102,10 @@ export class ProjectComponent implements OnInit {
   saveTask(): void {
     if (!this.newTask.title || !this.projectId || !this.addingSection) return;
 
-    const dueDate = typeof this.newTask.dueDate === 'string' ? new Date(this.newTask.dueDate) : this.newTask.dueDate || null;
+    const dueDate =
+      typeof this.newTask.dueDate === 'string'
+        ? new Date(this.newTask.dueDate)
+        : this.newTask.dueDate || null;
 
     const task: Task = {
       id: '',
@@ -141,6 +119,27 @@ export class ProjectComponent implements OnInit {
     this.firestoreService.addTask(this.projectId, task).then(() => {
       this.cancelAddTask();
       this.loadSectionsAndTasks(this.projectId!);
+    });
+  }
+
+  loadSectionsAndTasks(projectId: string): void {
+    this.firestoreService.getSections(projectId).subscribe((sections) => {
+      this.sectionOrder = sections.sort((a, b) => a.order - b.order);
+      this.availableSections = ['すべて', ...sections.map((s) => s.title)];
+
+      this.firestoreService.getTasksByProjectId(projectId).subscribe((tasks) => {
+        const grouped: { [key: string]: Task[] } = {};
+        for (const task of tasks) {
+          const section = task.section || '未分類';
+          if (!grouped[section]) grouped[section] = [];
+          grouped[section].push(task);
+        }
+
+        this.sectionsWithTasks = this.sectionOrder.map((sec) => ({
+          section: sec,
+          tasks: grouped[sec.title] || [],
+        }));
+      });
     });
   }
 
@@ -161,7 +160,6 @@ export class ProjectComponent implements OnInit {
   }
 
   filterDialogOpen() {
-    console.log('フィルターダイアログを開く');
     this.dialog.open(FilterDialogComponent);
   }
 }

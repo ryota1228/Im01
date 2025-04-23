@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { Task } from '../../models/task.model';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Firestore } from '@angular/fire/firestore';
@@ -12,25 +12,38 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './taskdetail.component.html',
   styleUrls: ['./taskdetail.component.css'],
 })
-export class TaskdetailComponent {
-  @Input() task!: Task;
-  @Input() projectId!: string;
+export class TaskdetailComponent implements OnInit {
+  @Input() task: Task | null = null;
+  @Input() projectId: string | null = null;
   @Output() closed = new EventEmitter<void>();
 
   constructor(private firestore: Firestore) {}
 
+  ngOnInit(): void {
+    console.log('[Taskdetail] Init - task:', this.task);
+    console.log('[Taskdetail] Init - projectId:', this.projectId);
+  }
+
   get dueDateString(): string {
-    return this.task?.dueDate
-      ? new Date(this.task.dueDate).toISOString().split('T')[0]
-      : '';
+    if (!this.task?.dueDate) return '';
+    try {
+      return new Date(this.task.dueDate).toISOString().split('T')[0];
+    } catch {
+      return '';
+    }
   }
 
   onDueDateChange(dateStr: string) {
-    this.task.dueDate = dateStr ? new Date(dateStr) : null;
+    if (this.task) {
+      this.task.dueDate = dateStr ? new Date(dateStr) : null;
+    }
   }
 
   async saveTask(): Promise<void> {
-    if (!this.projectId || !this.task?.id) return;
+    if (!this.projectId || !this.task?.id) {
+      console.warn('[Taskdetail] Cannot save - Missing projectId or task.id');
+      return;
+    }
 
     const ref = doc(this.firestore, `projects/${this.projectId}/tasks/${this.task.id}`);
     const updatedTask = {
@@ -41,30 +54,32 @@ export class TaskdetailComponent {
       section: this.task.section,
     };
 
-    await updateDoc(ref, updatedTask);
-    console.log('[DEBUG] Task updated!');
-    this.closed.emit();
+    try {
+      await updateDoc(ref, updatedTask);
+      console.log('[Taskdetail] Task updated:', updatedTask);
+      this.closed.emit();
+    } catch (error) {
+      console.error('[Taskdetail] Task update failed:', error);
+    }
   }
 
   async deleteTask(): Promise<void> {
-    if (!this.task?.id || !this.projectId) return;
+    if (!this.task?.id || !this.projectId) {
+      console.warn('[Taskdetail] Cannot delete - Missing projectId or task.id');
+      return;
+    }
 
     const taskRef = doc(this.firestore, `projects/${this.projectId}/tasks/${this.task.id}`);
     try {
       await deleteDoc(taskRef);
-      console.log('削除完了');
+      console.log('[Taskdetail] Task deleted:', this.task.id);
       this.closed.emit();
     } catch (error) {
-      console.error('削除エラー:', error);
+      console.error('[Taskdetail] Task deletion failed:', error);
     }
   }
 
   onClosePanel(): void {
-    console.log('[DEBUG] onClosePanel in TaskdetailComponent');
-    try {
-      this.closed.emit();
-    } catch (error) {
-      console.error('閉じるエラー:', error);
-    }
+    this.closed.emit();
   }
 }

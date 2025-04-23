@@ -4,19 +4,27 @@ import { Task } from '../models/task.model';
 
 @Injectable({ providedIn: 'root' })
 export class TaskPanelService {
-  task$ = new BehaviorSubject<Task | null>(null);
-  projectId$ = new BehaviorSubject<string | null>(null);
-  isOpen$ = new BehaviorSubject<boolean>(false);
-
+  close: any;
   open(task: Task, projectId: string) {
-    this.task$.next(task);
-    this.projectId$.next(projectId);
-    this.isOpen$.next(true);
+    throw new Error('Method not implemented.');
+  }
+  private selectedTaskSubject = new BehaviorSubject<Task | null>(null);
+  private projectIdSubject = new BehaviorSubject<string | null>(null);
+  private isOpenSubject = new BehaviorSubject<boolean>(false);
+
+  selectedTask$ = this.selectedTaskSubject.asObservable();
+  projectId$ = this.projectIdSubject.asObservable();
+  isOpen$ = this.isOpenSubject.asObservable();
+
+  openPanel(task: Task, projectId: string) {
+    this.selectedTaskSubject.next(task);
+    this.projectIdSubject.next(projectId);
+    this.isOpenSubject.next(true);
   }
 
-  close() {
-    this.isOpen$.next(false);
-    this.task$.next(null);
-    this.projectId$.next(null);
+  closePanel() {
+    this.isOpenSubject.next(false);
+    this.selectedTaskSubject.next(null);
+    this.projectIdSubject.next(null);
   }
 }

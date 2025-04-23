@@ -18,9 +18,7 @@ import { TaskPanelService } from '../../services/task-panel.service';
     RouterOutlet,
     CommonModule,
     MatDialogModule,
-    MatButtonModule,
-    TaskdetailComponent
-  ],
+    MatButtonModule],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.css']
 })
@@ -42,7 +40,7 @@ export class LayoutComponent {
   }
 
   ngOnInit() {
-    this.taskPanelService.task$.subscribe(task => this.selectedTask = task);
+    this.taskPanelService.selectedTask$.subscribe(task => this.selectedTask = task);
     this.taskPanelService.projectId$.subscribe(id => this.projectId = id);
     this.taskPanelService.isOpen$.subscribe(open => this.isTaskPanelOpen = open);
   }

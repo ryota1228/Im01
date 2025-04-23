@@ -1,27 +1,17 @@
- <router-outlet></router-outlet>
+<div class="app-container">
+  <router-outlet></router-outlet>
 
-<!-- <div *ngIf="isTaskPanelOpen" style="position: fixed; top: 20px; right: 20px; background: red; color: white; z-index: 5000; padding: 12px;">
-  パネルテスト
-</div>
+  <ng-container *ngIf="isTaskPanelOpen && selectedTask && projectId">
+    <div class="task-panel-overlay" (click)="closePanel()">
+      <div class="task-panel" (click)="$event.stopPropagation()">
+        <button class="close-button" (click)="closePanel()">×</button>
 
-
-<app-taskdetail
-  *ngIf="isTaskPanelOpen"
-  [task]="selectedTask!"
-  [projectId]="projectId!"
-  (closed)="closePanel()"/> -->
-
-  <!-- タスク詳細パネル（右スライド表示） -->
-<!-- <ng-container *ngIf="isTaskPanelOpen && selectedTask && projectId">
-  <div class="task-panel-overlay" (click)="closePanel()">
-    <div class="task-panel" (click)="$event.stopPropagation()">
-      <button class="close-button" (click)="closePanel()">×</button>
-
-      <app-taskdetail
-        [task]="selectedTask"
-        [projectId]="projectId"
-        (closed)="closePanel()"
-      ></app-taskdetail>
+        <app-taskdetail
+          [task]="selectedTask"
+          [projectId]="projectId"
+          (closed)="closePanel()"
+        ></app-taskdetail>
+      </div>
     </div>
-  </div>
-</ng-container> -->
+  </ng-container>
+</div>
