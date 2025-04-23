@@ -15,18 +15,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { FilterDialogComponent } from '../../components/filter-dialog/filter-dialog.component';
+import { EventEmitter,Output } from '@angular/core';
 import { TaskPanelService } from '../../services/task-panel.service';
 
 @Component({
   selector: 'app-project',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    DragDropModule,
-    MatDialogModule,
-    MatButtonModule
-  ],
+  imports: [CommonModule, FormsModule, DragDropModule, MatDialogModule, MatButtonModule],
   templateUrl: './project.component.html',
   styleUrls: ['./project.component.css'],
 })
@@ -35,12 +30,12 @@ export class ProjectComponent implements OnInit {
 
   currentView: 'list' | 'calendar' = 'list';
   searchKeyword: string = '';
-  selectedStatus: string = 'すべて';
-  selectedSection: string = 'すべて';
   hideCompleted: boolean = false;
   availableSections: string[] = [];
-  selectedSort: string = '期限昇順';
-  
+  selectedSort: string = '期限降順';
+
+  selectedStatuses: string[] = ['すべて'];
+  selectedSections: string[] = ['すべて'];
 
   addingSection: string | null = null;
   newTask: Partial<Task> = {
@@ -54,12 +49,19 @@ export class ProjectComponent implements OnInit {
   sectionsWithTasks: { section: Section; tasks: Task[] }[] = [];
   sectionOrder: Section[] = [];
 
+  selectedTask: Task | null = null;
+  isTaskPanelOpen = false;
+  projectTitle: string = 'プロジェクト名';
+
+
+  @Output() openTask = new EventEmitter<{ task: Task; projectId: string }>();
+
   constructor(
     private route: ActivatedRoute,
     private firestoreService: FirestoreService,
     private firestore: Firestore,
     private dialog: MatDialog,
-    private taskPanelService: TaskPanelService // ★追加
+    private taskPanelService: TaskPanelService
   ) {}
 
   ngOnInit(): void {
@@ -68,57 +70,6 @@ export class ProjectComponent implements OnInit {
       if (this.projectId) {
         this.loadSectionsAndTasks(this.projectId);
       }
-    });
-  }
-
-  openTaskPanel(task: Task): void {
-    if (!this.projectId) return;
-    this.taskPanelService.openPanel(task, this.projectId); // ★ここをサービスに変更
-  }
-
-  // 以下既存のコードはそのまま
-  toggleSection(title: string): void {
-    if (this.collapsedSections.has(title)) {
-      this.collapsedSections.delete(title);
-    } else {
-      this.collapsedSections.add(title);
-    }
-  }
-
-  isSectionCollapsed(title: string): boolean {
-    return this.collapsedSections.has(title);
-  }
-
-  startAddTask(sectionTitle: string): void {
-    this.addingSection = sectionTitle;
-    this.newTask = { title: '', assignee: '', dueDate: undefined };
-  }
-
-  cancelAddTask(): void {
-    this.addingSection = null;
-    this.newTask = { title: '', assignee: '', dueDate: undefined };
-  }
-
-  saveTask(): void {
-    if (!this.newTask.title || !this.projectId || !this.addingSection) return;
-
-    const dueDate =
-      typeof this.newTask.dueDate === 'string'
-        ? new Date(this.newTask.dueDate)
-        : this.newTask.dueDate || null;
-
-    const task: Task = {
-      id: '',
-      title: this.newTask.title!,
-      assignee: this.newTask.assignee || '',
-      dueDate: dueDate,
-      status: '未着手',
-      section: this.addingSection,
-    };
-
-    this.firestoreService.addTask(this.projectId, task).then(() => {
-      this.cancelAddTask();
-      this.loadSectionsAndTasks(this.projectId!);
     });
   }
 
@@ -143,23 +94,85 @@ export class ProjectComponent implements OnInit {
     });
   }
 
+  filterDialogOpen(): void {
+    const dialogRef = this.dialog.open(FilterDialogComponent, {
+      data: {
+        sections: this.availableSections.filter(s => s !== 'すべて'),
+        currentStatuses: this.selectedStatuses.includes('すべて') ? [] : this.selectedStatuses,
+        currentSections: this.selectedSections.includes('すべて') ? [] : this.selectedSections,
+      },
+    });
+  
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.selectedStatuses = result.selectedStatuses.length > 0 ? result.selectedStatuses : ['すべて'];
+        this.selectedSections = result.selectedSections.length > 0 ? result.selectedSections : ['すべて'];
+      }
+    });
+  }
+  
   onSectionDrop(event: CdkDragDrop<{ section: Section; tasks: Task[] }[]>): void {
     moveItemInArray(this.sectionsWithTasks, event.previousIndex, event.currentIndex);
     this.sectionOrder = this.sectionsWithTasks.map((entry) => entry.section);
-
+  
     if (!this.projectId) return;
-
+  
     const updates = this.sectionOrder.map((sec, index) => {
       const ref = doc(this.firestore, `projects/${this.projectId}/sections/${sec.id}`);
       return updateDoc(ref, { order: index });
     });
-
+  
     Promise.all(updates).then(() => {
       this.loadSectionsAndTasks(this.projectId!);
     });
   }
+  
+  toggleSection(title: string): void {
+    if (this.collapsedSections.has(title)) {
+      this.collapsedSections.delete(title);
+    } else {
+      this.collapsedSections.add(title);
+    }
+  }
+  
+  isSectionCollapsed(title: string): boolean {
+    return this.collapsedSections.has(title);
+  }
+  
+  startAddTask(sectionTitle: string): void {
+    this.addingSection = sectionTitle;
+    this.newTask = { title: '', assignee: '', dueDate: undefined };
+  }
 
-  filterDialogOpen() {
-    this.dialog.open(FilterDialogComponent);
+  saveTask(): void {
+    if (!this.newTask.title || !this.projectId || !this.addingSection) return;
+  
+    const dueDate = typeof this.newTask.dueDate === 'string' ? new Date(this.newTask.dueDate) : this.newTask.dueDate || null;
+  
+    const task: Task = {
+      id: '',
+      title: this.newTask.title!,
+      assignee: this.newTask.assignee || '',
+      dueDate: dueDate,
+      status: '未着手',
+      section: this.addingSection,
+    };
+  
+    this.firestoreService.addTask(this.projectId, task).then(() => {
+      this.cancelAddTask();
+      this.loadSectionsAndTasks(this.projectId!);
+    });
+  }
+  
+  cancelAddTask(): void {
+    this.addingSection = null;
+    this.newTask = { title: '', assignee: '', dueDate: undefined };
+  }
+  
+  openTaskPanel(task: Task): void {
+    if (!this.projectId) return;
+  
+    console.log('[DEBUG] taskパネル開く:', task);
+    this.taskPanelService.openPanel(task, this.projectId);
   }
 }

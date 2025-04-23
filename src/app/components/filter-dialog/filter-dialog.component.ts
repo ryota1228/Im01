@@ -1,80 +1,49 @@
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
-import { LogoutDialogComponent } from '../logout-dialog/logout-dialog.component';
 import { FormsModule } from '@angular/forms';
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Firestore, doc, updateDoc } from '@angular/fire/firestore';
-import { Task } from '../../models/task.model';
-import { Section } from '../../models/section.model';
-import { FirestoreService } from '../../services/firestore.service';
-import {
-  CdkDragDrop,
-  moveItemInArray,
-  DragDropModule,
-} from '@angular/cdk/drag-drop';
-import { MatDialog } from '@angular/material/dialog';
+import { Component, Inject } from '@angular/core';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-filter-dialog',
   standalone: true,
-  imports: [],
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatCheckboxModule,
+    FormsModule,
+    MatButtonModule
+  ],
   templateUrl: './filter-dialog.component.html',
   styleUrl: './filter-dialog.component.css'
 })
-export class FilterDialogComponent implements OnInit {
-openTaskPanel(_t20: any) {
-throw new Error('Method not implemented.');
-}
-  projectId: string | null = null;
+export class FilterDialogComponent {
+  allStatuses = ['未着手', '進行中', '完了'];
+  allSections: string[] = [];
 
-  currentView: 'list' | 'calendar' = 'list';
-  searchKeyword: string = '';
-  selectedStatus: string = 'すべて';
-  selectedSection: string = 'すべて';
-  hideCompleted: boolean = false;
-  availableSections: string[] = [];
-  selectedSort: string = '期限昇順';
+  selectedStatusesMap: { [key: string]: boolean } = {};
+  selectedSectionsMap: { [key: string]: boolean } = {};
 
   constructor(
-    private dialogRef: MatDialogRef<LogoutDialogComponent>,
-    private authService: AuthService,
-    private router: Router,
-    private route: ActivatedRoute,
-    private firestoreService: FirestoreService,
-    private firestore: Firestore,
-    private dialog: MatDialog
-  )
-  {
+    public dialogRef: MatDialogRef<FilterDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { sections: string[]; currentStatuses: string[], currentSections: string[] }
+  ) {
+    this.allSections = data.sections;
 
+    data.currentStatuses.forEach(s => this.selectedStatusesMap[s] = true);
+    data.currentSections.forEach(s => this.selectedSectionsMap[s] = true);
   }
-  ngOnInit(): void {
-    throw new Error('Method not implemented.');
+
+  applyFilters(): void {
+    const selectedStatuses = Object.keys(this.selectedStatusesMap).filter(k => this.selectedStatusesMap[k]);
+    const selectedSections = Object.keys(this.selectedSectionsMap).filter(k => this.selectedSectionsMap[k]);
+
+    this.dialogRef.close({ selectedStatuses, selectedSections });
   }
 
   onCancel(): void {
     this.dialogRef.close();
   }
-
-  async onConfirm(): Promise<void> {
-    await this.authService.logout();
-    this.dialogRef.close();
-    this.router.navigate(['/login']);
-    console.log('ログアウトしました');
-  }
-
-  sortTasks(tasks: Task[]): Task[] {
-    return tasks.sort((a, b) => {
-      if (this.selectedSort === '期限昇順') {
-        return a.dueDate?.getTime() - b.dueDate?.getTime() || 0;
-      } else {
-        return b.dueDate?.getTime() - a.dueDate?.getTime() || 0;
-      }
-    });
-  }
-
 }
