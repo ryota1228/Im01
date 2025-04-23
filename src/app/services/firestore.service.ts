@@ -78,7 +78,7 @@ export class FirestoreService {
     const tasksRef = collection(this.firestore, 'tasks') as CollectionReference<Task>;
     const converted = tasksRef.withConverter(taskConverter);
     return collectionData(converted, { idField: 'id' }).pipe(
-      tap(data => console.log('[DEBUG] Firestoreデータ:', data))  // ←ここをpipeで繋ぐ
+      tap(data => console.log('[DEBUG] Firestoreデータ:', data))
     ) as Observable<Task[]>;
   }
 
