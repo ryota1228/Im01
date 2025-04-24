@@ -71,4 +71,8 @@ export class AuthService {
   register(email: string, password: string): Promise<UserCredential> {
     return createUserWithEmailAndPassword(this.auth, email, password);
   }
+
+  getCurrentUser(): User | null {
+    return this.currentUserSubject.value;
+  }
 }

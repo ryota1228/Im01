@@ -4,9 +4,10 @@ export interface Task {
   id: string;
   title: string;
   assignee: string;
-  dueDate: any; // Date でも Firebase Timestamp でもOK
+  dueDate: any;
   section: string;
   status: string;
+  order?: number | null;
 }
 
 export const taskConverter: FirestoreDataConverter<Task> = {
@@ -20,6 +21,7 @@ export const taskConverter: FirestoreDataConverter<Task> = {
       dueDate: data['dueDate'].toDate?.() ?? new Date(),
       section: data['section'],
       status: data['status'],
+      order: data['order'],
     };
   },
 
@@ -30,6 +32,7 @@ export const taskConverter: FirestoreDataConverter<Task> = {
       dueDate: task.dueDate,
       section: task.section,
       status: task.status,
+      order: task.order,
     };
   }
 };

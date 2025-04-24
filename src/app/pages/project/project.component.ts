@@ -6,18 +6,16 @@ import { Section } from '../../models/section.model';
 import { FirestoreService } from '../../services/firestore.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  CdkDragDrop,
-  moveItemInArray,
-  transferArrayItem,
-  DragDropModule,
-} from '@angular/cdk/drag-drop';
+import {CdkDragDrop, moveItemInArray, transferArrayItem, DragDropModule} from '@angular/cdk/drag-drop';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { FilterDialogComponent } from '../../components/filter-dialog/filter-dialog.component';
 import { TaskPanelService } from '../../services/task-panel.service';
-import { firstValueFrom } from 'rxjs';
+import { SortDialogComponent } from '../../components/sort-dialog/sort-dialog.component';
+import { AddSectionDialogComponent } from '../../components/add-section-dialog/add-section-dialog.component';
+import { DeleteSectionDialogComponent } from '../../components/delete-section-dialog/delete-section-dialog.component';
+
 
 @Component({
   selector: 'app-project',
@@ -34,7 +32,7 @@ export class ProjectComponent implements OnInit {
   searchKeyword: string = '';
   hideCompleted: boolean = false;
   availableSections: string[] = [];
-  selectedSort: string = '期限降順';
+  selectedSort: string = 'ユーザー設定順';
   selectedStatuses: string[] = ['すべて'];
   selectedSections: string[] = ['すべて'];
 
@@ -48,6 +46,9 @@ export class ProjectComponent implements OnInit {
   
   sectionsWithTasks: { section: Section; tasks: Task[] }[] = [];
   sectionOrder: Section[] = [];
+
+  addingNewSection: boolean = false;
+  newSectionTitle: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -93,11 +94,65 @@ export class ProjectComponent implements OnInit {
           if (!grouped[section]) grouped[section] = [];
           grouped[section].push(task);
         }
-        this.sectionsWithTasks = this.sectionOrder.map(sec => ({
-          section: sec,
-          tasks: grouped[sec.title] || [],
-        }));
+        this.sectionsWithTasks = this.sectionOrder.map(sec => {
+          let tasks = grouped[sec.title] || [];
+          
+            tasks = tasks.sort((a, b) => {
+              if (a.order != null && b.order != null) return a.order - b.order;
+              if (a.order != null) return -1;
+              if (b.order != null) return 1;
+              return 0;
+            });
+          return {
+            section: sec,
+            tasks: tasks,
+          };
+        });
       });
+    });
+  }
+
+  addSectionDialogOpen(): void {
+    const dialogRef = this.dialog.open(AddSectionDialogComponent, {
+      data: {}
+    });
+
+    dialogRef.afterClosed().subscribe(async (title: string | null) => {
+      if (!title || !this.projectId) return;
+  
+      const order = this.sectionsWithTasks.length;
+      await this.firestoreService.addSection(this.projectId, {
+        title,
+        order,
+      });
+  
+      this.loadSectionsAndTasks(this.projectId);
+    });
+  }
+
+  deleteSectionDialogOpen(section: Section): void {
+    const dialogRef = this.dialog.open(DeleteSectionDialogComponent, {
+      data: {
+        sections: this.sectionOrder.filter(s => s.id !== section.id),
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (!result || !this.projectId) return;
+
+    if (result.action === 'delete') {
+      this.firestoreService.deleteSectionWithTasks(this.projectId, section.id, section.title);
+      
+    } else if (result.action === 'move' && result.targetSectionId) {
+      const targetTitle = this.sectionOrder.find(s => s.id === result.targetSectionId)?.title;
+      if (targetTitle) {
+        this.firestoreService.moveTasksToSection(this.projectId, section.title, targetTitle)
+          .then(() => this.firestoreService.deleteSection(this.projectId!, section.id, targetTitle));
+          
+      }
+    }
+
+      this.loadSectionsAndTasks(this.projectId!);
     });
   }
 
@@ -148,18 +203,25 @@ export class ProjectComponent implements OnInit {
     Promise.all(updates).then(() => this.loadSectionsAndTasks(this.projectId!));
   }
 
-  onTaskDrop(event: CdkDragDrop<Task[]>, targetSectionTitle: string): void {
+  onTaskDrop(event: CdkDragDrop<Task[]>, sectionTitle: string): void {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
       transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
-      const movedTask = event.container.data[event.currentIndex];
-      if (movedTask && this.projectId) {
-        this.firestoreService.updateDocument(`projects/${this.projectId}/tasks/${movedTask.id}`, {
-          section: targetSectionTitle
-        });
-      }
     }
+  
+    const movedTasks = event.container.data;
+  
+    movedTasks.forEach((task, index) => {
+      const updates: Partial<Task> = {
+        order: index,
+        section: sectionTitle,
+      };
+      this.firestoreService.updateDocument(`projects/${this.projectId}/tasks/${task.id}`, updates)
+        .then(() => console.log(`[DEBUG] タスク ${task.title} の order=${index} 更新完了`));
+    });
+
+    this.loadSectionsAndTasks(this.projectId!);
   }
 
   isSectionCollapsed(title: string): boolean {
@@ -181,6 +243,7 @@ export class ProjectComponent implements OnInit {
       dueDate: dueDate,
       status: '未着手',
       section: this.addingSection,
+      order: 0,
     };
     this.firestoreService.addTask(this.projectId, task).then(() => {
       this.cancelAddTask();
@@ -215,7 +278,29 @@ export class ProjectComponent implements OnInit {
     });
   }
 
+  sortDialogOpen(): void{
+    const dialogRef = this.dialog.open(SortDialogComponent, {
+      data: {
+        sections: this.availableSections.filter(s => s !== 'すべて'),
+      },
+    });
+  }
+
   get connectedDropListIds(): string[] {
-    return this.sectionsWithTasks.map(s => 'dropList-' + s.section.title);
-  }  
+    return this.sectionsWithTasks.map(s => 'dropList-' + s.section.id);
+  }
+
+reOrderTasksByDueDate(): void{
+  if (!this.projectId) return;
+
+  this.firestoreService.getTasksByProjectId(this.projectId).subscribe(tasks => {
+    const updates = tasks
+    .filter(t => t.order == null)
+    .map(t => this.firestoreService.updateDocument(`projects/${this.projectId}/tasks/${t.id}`, {
+      order: null
+    }));
+
+    Promise.all(updates).then(() => this.loadSectionsAndTasks(this.projectId!));
+  });
+}
 }

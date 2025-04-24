@@ -1,0 +1,11 @@
+<h2>新規プロジェクト作成</h2>
+
+<div class="form-group">
+  <label for="title">プロジェクト名</label>
+  <input id="title" [(ngModel)]="projectTitle" placeholder="例）課題管理アプリ開発" />
+</div>
+
+<div class="actions">
+  <button (click)="cancel()">キャンセル</button>
+  <button [disabled]="!projectTitle.trim()" (click)="createProject()">作成</button>
+</div>

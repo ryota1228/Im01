@@ -64,6 +64,7 @@ export class FirestoreService {
     return updateDoc(ref, data as UpdateData<T>);
   }
   
+  
 
   deleteDocument(path: string): Promise<void> {
     const ref = doc(this.firestore, path);
@@ -115,6 +116,30 @@ export class FirestoreService {
   addSection(projectId: string, section: { title: string; order: number }) {
     const sectionRef = collection(this.firestore, `projects/${projectId}/sections`);
     return addDoc(sectionRef, section);
+  }
+
+  async deleteSectionWithTasks(projectId: string, sectionId: string, sectionTitle: string): Promise<void> {
+    const taskPath = `projects/${projectId}/tasks`;
+    const tasks = await this.getTasksByProjectIdOnce(projectId);
+    const deletePromises = tasks
+    .filter(t => t.section === sectionTitle)
+    .map(t => this.deleteDocument(`${taskPath}/${t.id}`));
+    
+    await Promise.all(deletePromises);
+    await this.deleteDocument(`projects/${projectId}/sections/${sectionId}`);
+  }
+  
+  deleteSection(projectId: string, sectionId: string, targetSectionTitle: string): Promise<void> {
+    const sectionRef = doc(this.firestore, `projects/${projectId}/sections/${sectionId}`);
+    return deleteDoc(sectionRef);
+  }
+
+  async moveTasksToSection(projectId: string, sectionTitle: string, targetSectionTitle: string): Promise<void> {
+    const taskPath = `projects/${projectId}/tasks`;
+    const tasks = await this.getTasksByProjectIdOnce(projectId);
+    const movePromises = tasks
+    .filter(t => t.section === sectionTitle)
+    .map(t => this.updateDocument(`${taskPath}/${t.id}`, { section: targetSectionTitle }));
   }
   
 }

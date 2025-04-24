@@ -8,17 +8,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { LogoutDialogComponent } from '../logout-dialog/logout-dialog.component';
 import { Task } from '../../models/task.model';
-import { TaskdetailComponent } from '../../pages/taskdetail/taskdetail.component';
 import { TaskPanelService } from '../../services/task-panel.service';
+import { CreateProjectDialogComponent } from '../create-project-dialog/create-project-dialog.component';
+
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [
-    RouterOutlet,
-    CommonModule,
-    MatDialogModule,
-    MatButtonModule],
+  imports: [RouterOutlet, CommonModule, MatDialogModule, MatButtonModule],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.css']
 })
@@ -28,6 +25,7 @@ export class LayoutComponent {
   selectedTask: Task | null = null;
   isTaskPanelOpen = false;
   projectId: string | null = null;
+  joinedProjects: any;
 
   constructor(
     private authService: AuthService,
@@ -78,6 +76,17 @@ closePanel(): void {
   this.selectedTask = null;
   this.projectId = null;
 }
+
+openCreateProjectDialog(): void {
+  const dialogRef = this.dialog.open(CreateProjectDialogComponent);
+
+  dialogRef.afterClosed().subscribe(newProjectId => {
+    if (newProjectId) {
+      this.router.navigate(['/project', newProjectId]);
+    }
+  });
+}
+
   
 }
 

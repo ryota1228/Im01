@@ -59,19 +59,27 @@
           </div>
     
         </div>
+
+        <button *ngIf="openedSection === 'insight'" class="sidebar-link sidebar-sub add-project-btn" (click)="openCreateProjectDialog()">
+          ＋ 新規作成
+        </button>
     
         <div *ngIf="openedSection === 'insight'" class="sidebar-menu-list accordion-body">
           <a href="project/sample-project" class="sidebar-link sidebar-sub">
             サンプルPJ1
           </a>
 
-          <a href="#" class="sidebar-link sidebar-sub">
-            ポートフォリオポートフォリオ
+          <a href="/project/WMKCEuI3Tmj2QrvPUk2s" class="sidebar-link sidebar-sub">
+            サンプルPJ2
           </a>
-          
-          <a href="#" class="sidebar-link sidebar-sub">
-            ゴール
-          </a>
+
+          <a
+              *ngFor="let project of joinedProjects"
+              href="/project/{{ project.id }}"
+              class="sidebar-link sidebar-sub"
+            >
+              {{ project.title }}
+            </a>
         </div>
       </div>
     </aside>
