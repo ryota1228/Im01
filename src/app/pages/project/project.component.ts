@@ -15,12 +15,14 @@ import { TaskPanelService } from '../../services/task-panel.service';
 import { SortDialogComponent } from '../../components/sort-dialog/sort-dialog.component';
 import { AddSectionDialogComponent } from '../../components/add-section-dialog/add-section-dialog.component';
 import { DeleteSectionDialogComponent } from '../../components/delete-section-dialog/delete-section-dialog.component';
-
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-project',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, MatDialogModule, MatButtonModule],
+  imports: [CommonModule, FormsModule, DragDropModule, MatDialogModule, MatButtonModule, MatSnackBarModule, MatCheckboxModule],
   templateUrl: './project.component.html',
   styleUrls: ['./project.component.css'],
 })
@@ -50,12 +52,15 @@ export class ProjectComponent implements OnInit {
   addingNewSection: boolean = false;
   newSectionTitle: string = '';
 
+  readonly COMPLETED_SECTION_TITLE = '完了済み';
+
   constructor(
     private route: ActivatedRoute,
     private firestoreService: FirestoreService,
     private firestore: Firestore,
     private dialog: MatDialog,
     private taskPanelService: TaskPanelService,
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit(): void {
@@ -83,6 +88,30 @@ export class ProjectComponent implements OnInit {
     updateDoc(ref, { title: this.projectTitle });
   }
 
+  async updateTaskStatus(task: Task, newStatus: string): Promise<void> {
+    if (!this.projectId || !task.id) return;
+
+    const updates: any = { status: newStatus };
+
+    if (newStatus === '完了') {
+      updates.section = this.COMPLETED_SECTION_TITLE;
+      updates.completionOrder = Date.now();
+
+      this.snackBar.open('完了済みに移動しました', '', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'bottom',
+        panelClass: ['complete-snackbar']
+      });
+    }
+
+    await this.firestoreService.updateDocument(
+      `projects/${this.projectId}/tasks/${task.id}`, updates
+    );
+
+    this.loadSectionsAndTasks(this.projectId);
+  }
+
   loadSectionsAndTasks(projectId: string): void {
     this.firestoreService.getSections(projectId).subscribe(sections => {
       this.sectionOrder = sections.sort((a, b) => a.order - b.order);
@@ -95,18 +124,22 @@ export class ProjectComponent implements OnInit {
           grouped[section].push(task);
         }
         this.sectionsWithTasks = this.sectionOrder.map(sec => {
+          const isCompleted = sec.isFixed === true;
+          if (isCompleted) this.collapsedSections.add(sec.title);
+
           let tasks = grouped[sec.title] || [];
+
+          tasks = tasks.sort((a, b) => {
+
+            if(isCompleted)
+              {return (a.completionOrder || 0) - (b.completionOrder || 0);}
+            if (a.order != null && b.order != null) return a.order - b.order;
+            if (a.order != null) return -1;
+            if (b.order != null) return 1;
+            return 0;
+          });
           
-            tasks = tasks.sort((a, b) => {
-              if (a.order != null && b.order != null) return a.order - b.order;
-              if (a.order != null) return -1;
-              if (b.order != null) return 1;
-              return 0;
-            });
-          return {
-            section: sec,
-            tasks: tasks,
-          };
+          return {section: sec,tasks};
         });
       });
     });
@@ -233,9 +266,26 @@ export class ProjectComponent implements OnInit {
     this.newTask = { title: '', assignee: '', dueDate: undefined };
   }
 
-  saveTask(): void {
+  async saveTask(): Promise<void> {
     if (!this.newTask.title || !this.projectId || !this.addingSection) return;
-    const dueDate = typeof this.newTask.dueDate === 'string' ? new Date(this.newTask.dueDate) : this.newTask.dueDate || null;
+
+    const sectionTitle = this.addingSection;
+
+    const allTasks = await this.firestoreService.getTasksByProjectIdOnce(this.projectId);
+    const targetTasks = allTasks.filter(t => t.section === sectionTitle && t.order !=null);
+
+    const bumpPromises = targetTasks.map(t => {
+      return this.firestoreService.updateDocument(`projects/${this.projectId}/tasks/${t.id}`, {
+        order: (t.order ?? 0) + 1,
+      })
+    })
+
+    await Promise.all(bumpPromises);
+
+    const dueDate = typeof this.newTask.dueDate === 'string'
+    ? new Date(this.newTask.dueDate)
+    : this.newTask.dueDate || null;
+    
     const task: Task = {
       id: '',
       title: this.newTask.title!,
@@ -245,10 +295,9 @@ export class ProjectComponent implements OnInit {
       section: this.addingSection,
       order: 0,
     };
-    this.firestoreService.addTask(this.projectId, task).then(() => {
-      this.cancelAddTask();
-      this.loadSectionsAndTasks(this.projectId!);
-    });
+    await this.firestoreService.addTask(this.projectId, task);
+    this.cancelAddTask();
+    this.loadSectionsAndTasks(this.projectId!);
   }
 
   cancelAddTask(): void {

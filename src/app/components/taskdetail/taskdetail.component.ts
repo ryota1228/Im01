@@ -4,6 +4,7 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Firestore } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-taskdetail',
@@ -17,7 +18,7 @@ export class TaskdetailComponent implements OnInit {
   @Input() projectId: string | null = null;
   @Output() closed = new EventEmitter<void>();
 
-  constructor(private firestore: Firestore) {}
+  constructor(private firestore: Firestore, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     console.log('[Taskdetail] Init - task:', this.task);
@@ -40,11 +41,8 @@ export class TaskdetailComponent implements OnInit {
   }
 
   async saveTask(): Promise<void> {
-    if (!this.projectId || !this.task?.id) {
-      console.warn('[Taskdetail] Cannot save - Missing projectId or task.id');
-      return;
-    }
-
+    if (!this.projectId || !this.task?.id) return;
+  
     const ref = doc(this.firestore, `projects/${this.projectId}/tasks/${this.task.id}`);
     const updatedTask = {
       title: this.task.title,
@@ -53,14 +51,25 @@ export class TaskdetailComponent implements OnInit {
       status: this.task.status,
       section: this.task.section,
     };
-
+  
+    if (this.task.status === '完了') {
+      updatedTask.section = '完了済み';
+  
+      this.snackBar.open('✔ 完了したタスクを完了済みセクションに移動しました', '', {
+        duration: 5000,
+        horizontalPosition: 'end',
+        verticalPosition: 'bottom',
+        panelClass: ['complete-snackbar']
+      });
+    }
+  
     try {
       await updateDoc(ref, updatedTask);
-      console.log('[Taskdetail] Task updated:', updatedTask);
       this.closed.emit();
     } catch (error) {
-      console.error('[Taskdetail] Task update failed:', error);
+      console.error('Task update failed:', error);
     }
+    
   }
 
   async deleteTask(): Promise<void> {

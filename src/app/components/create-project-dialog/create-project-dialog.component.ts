@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { FirestoreService } from '../../services/firestore.service';
 
 @Component({
   selector: 'app-create-project-dialog',
@@ -15,12 +16,13 @@ import { MatButtonModule } from '@angular/material/button';
   styleUrls: ['./create-project-dialog.component.css']
 })
 export class CreateProjectDialogComponent {
-  projectTitle = '';
+  projectTitle = ''
 
   constructor(
     private dialogRef: MatDialogRef<CreateProjectDialogComponent>,
     private firestore: Firestore,
-    private authService: AuthService
+    private authService: AuthService,
+    private firestoreService: FirestoreService
   ) {}
 
   async createProject(): Promise<void> {
@@ -35,9 +37,13 @@ export class CreateProjectDialogComponent {
       memberIds: [user.uid],
       createdAt: new Date(),
     };
-
+        
     const docRef = await addDoc(collection(this.firestore, 'projects'), project);
-    this.dialogRef.close(docRef.id);
+    const projectId = docRef.id;
+
+    await this.firestoreService.initializeDefaultSections(projectId);
+
+    this.dialogRef.close(projectId);
   }
 
   cancel(): void {

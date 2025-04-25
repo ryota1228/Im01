@@ -46,11 +46,13 @@
             </span>
 
             <ng-container *ngIf="editingSectionId !== entry.section.id">
-              <h3 (dblclick)="enableSectionEdit(entry.section)">
+              <h3 (dblclick)="enableSectionEdit(entry.section)" class="section-title">
                 {{ entry.section.title }}
               </h3>
-              <button (click)="enableSectionEdit(entry.section)">編集</button>
-              <button (click)="deleteSectionDialogOpen(entry.section)">削除</button>
+              <ng-container *ngIf="entry.section.title !== '完了済み' && entry.section.isFixed !== true">
+                <button (click)="enableSectionEdit(entry.section)">編集</button>
+                <button (click)="deleteSectionDialogOpen(entry.section)">削除</button>
+              </ng-container>
             </ng-container>
 
             <ng-container *ngIf="editingSectionId === entry.section.id">
@@ -59,7 +61,9 @@
               <button (click)="cancelEditSection()">キャンセル</button>
             </ng-container>
 
-            <button (click)="startAddTask(entry.section.title)">＋タスク追加</button>
+            <ng-container *ngIf="entry.section.isFixed !== true">
+              <button (click)="startAddTask(entry.section.title)">＋タスク追加</button>
+            </ng-container>
           </div>
 
           <div *ngIf="addingSection === entry.section.title" class="add-task-form">
@@ -72,6 +76,7 @@
 
           <ng-container *ngIf="!isSectionCollapsed(entry.section.title)">
             <div
+              [cdkDropListDisabled]="entry.section.isFixed === true"
               cdkDropList
               [id]="'dropList-' + entry.section.id"
               [cdkDropListData]="entry.tasks"
@@ -111,6 +116,7 @@
   </div>
 
   <div *ngIf="currentView === 'calendar'">
-    <p>未実装なう</p>
+    <p>未実装です、、、
+    </p>
   </div>
 </div>

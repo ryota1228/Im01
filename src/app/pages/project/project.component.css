@@ -251,3 +251,28 @@
   min-height: 60px;
   align-items: center;
 }
+
+/* .complete-snackbar {
+  background-color: #4caf50;
+  color: #fff;
+  font-weight: bold;
+} */
+
+
+::ng-deep .mat-snack-bar-container.complete-snackbar {
+  background-color: #323232 !important;
+  color: #ffffff !important;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 16px 24px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  min-width: 240px;
+}
+
+.section-title{
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  left: 0;
+}

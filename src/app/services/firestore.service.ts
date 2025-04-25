@@ -26,9 +26,24 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
+
+  isFixed = true
+
   constructor(
     private firestore: Firestore = inject(Firestore)
   ) {}
+
+  initializeDefaultSections(projectId: string): Promise<void> {
+    const defaultSections = [
+      { title: '目標・マイルストーン', order: 0 },
+      { title: 'テンプレート', order: 1 },
+      { title: 'やること', order: 2 },
+      { title: '完了済み', order: 3, isFixed: true }
+    ];
+
+    const sectionRef = collection(this.firestore, `projects/${projectId}/sections`);
+    return Promise.all(defaultSections.map(s => addDoc(sectionRef, s))).then(() => {});
+  }  
 
   getCollection<T extends DocumentData>(path: string): Observable<T[]> {
     const ref = collection(this.firestore, path) as any;
@@ -141,5 +156,4 @@ export class FirestoreService {
     .filter(t => t.section === sectionTitle)
     .map(t => this.updateDocument(`${taskPath}/${t.id}`, { section: targetSectionTitle }));
   }
-  
 }
