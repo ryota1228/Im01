@@ -1,3 +1,4 @@
+
 <div class="project-wrapper">
   <div class="project-header">
     <input
@@ -25,6 +26,11 @@
 
       <button (click)="addSectionDialogOpen()">セクション追加</button>
 
+      <mat-slide-toggle [(ngModel)]="autoMoveCompletedTasks" (change)="onToggleAutoMoveCompletedTasks()" class="auto-move-toggle">
+        完了タスクを自動で完了済セクションに移動
+      </mat-slide-toggle>
+      
+
     </div>
 
     <div
@@ -40,30 +46,34 @@
         [hidden]="selectedSections[0] !== 'すべて' && !selectedSections.includes(entry.section.title)"
       >
         <div class="task-section">
+
           <div class="section-header">
             <span class="arrow" (click)="toggleSection(entry.section.title)">
               {{ isSectionCollapsed(entry.section.title) ? '▶' : '▼' }}
             </span>
-
-            <ng-container *ngIf="editingSectionId !== entry.section.id">
-              <h3 (dblclick)="enableSectionEdit(entry.section)" class="section-title">
-                {{ entry.section.title }}
-              </h3>
-              <ng-container *ngIf="entry.section.title !== '完了済' && entry.section.isFixed !== true">
-                <button (click)="enableSectionEdit(entry.section)">編集</button>
-                <button (click)="deleteSectionDialogOpen(entry.section)">削除</button>
+          
+            <div class="section-title-wrapper">
+              <ng-container *ngIf="editingSectionId !== entry.section.id">
+                <h3
+                  (click)="enableSectionEdit(entry.section)"
+                  class="section-title"
+                  title="クリックで編集"
+                >
+                  {{ entry.section.title }}
+                </h3>
+                <button *ngIf="!entry.section.isFixed" class="delete-section-button" (click)="deleteSectionDialogOpen(entry.section)">セクションを削除</button>
               </ng-container>
-            </ng-container>
-
-            <ng-container *ngIf="editingSectionId === entry.section.id">
-              <input [(ngModel)]="editingSectionTitle" />
-              <button (click)="saveEditedSectionTitle(entry.section, editingSectionTitle)">保存</button>
-              <button (click)="cancelEditSection()">キャンセル</button>
-            </ng-container>
-
-            <ng-container *ngIf="entry.section.isFixed !== true">
+          
+              <ng-container *ngIf="editingSectionId === entry.section.id">
+                <input [(ngModel)]="editingSectionTitle" class="section-edit-input" />
+                <button class="save-section-button" (click)="saveEditedSectionTitle(entry.section, editingSectionTitle)">保存</button>
+                <button class="cancel-section-button" (click)="cancelEditSection()">キャンセル</button>
+              </ng-container>
+            </div>
+          
+            <div class="add-task-button-wrapper">
               <button (click)="startAddTask(entry.section.title)">＋タスク追加</button>
-            </ng-container>
+            </div>
           </div>
 
           <div *ngIf="addingSection === entry.section.title" class="add-task-form">
@@ -91,29 +101,38 @@
               (cdkDropListDropped)="onTaskDrop($event, entry.section.title)"
               class="task-drop-zone"
             >
-              <div
-                *ngFor="let task of entry.tasks"
-                cdkDrag
-                [hidden]="
-                  (selectedStatuses[0] !== 'すべて' && !selectedStatuses.includes(task.status)) ||
-                  (hideCompleted && task.status === '完了') ||
-                  (searchKeyword && !(task.title.toLowerCase().includes(searchKeyword.toLowerCase())||
-                  task.assignee.toLowerCase().includes(searchKeyword.toLowerCase())))
-                "
-                class="task-card"
-                [ngClass]="'status-' + task.status"
-                (click)="openTaskPanel(task)">
 
+            <div
+            *ngFor="let task of entry.tasks"
+            cdkDrag
+            class="task-card"
+            [ngClass]="[
+              isOverdue(task) ? 'status-overdue' : '',
+              'status-' + task.status
+              ]"
+              (click)="openTaskPanel(task)">
+              <div class="task-content">
                 <div class="task-title">{{ task.title }}</div>
-                
-                <div class="task-meta">
-                  <span>担当: {{ getAssigneeName(task.assignee) }}</span>
-                  <span>期限: {{ task.dueDate?.toDate ? (task.dueDate.toDate() | date: 'yyyy-MM-dd') : (task.dueDate | date: 'yyyy-MM-dd') }}</span>
-                  <span>状態: {{ task.status }}</span>
-                  <span>優先度: {{ task.priority }}</span>
-                  <span>進捗率: {{ task.progress }}%</span>
+                <div class="task-meta-horizontal">
+                  <span class="meta-item assignee">{{ getAssigneeName(task.assignee) }}</span>
+                  <span class="meta-separator">｜</span>
+                  <span class="meta-item dueDate">{{ formatDueDate(task.dueDate) }}</span>
+                  <span class="meta-separator">｜</span>
+                  <span class="meta-item status">{{ task.status }}</span>
+                  <span class="meta-separator">｜</span>
+                  <span class="meta-item priority">{{ task.priority }}</span>
+                  <span class="meta-separator">｜</span>
+                  <span class="meta-item progress">{{ task.progress }}%</span>
+                  <span class="meta-separator">｜</span>
+                  <span class="meta-item estimate">{{ task.estimate }}min</span>
+                  <span class="meta-separator">｜</span>
+                  <span class="meta-item actual">{{ task.actual }}min</span>
                 </div>
+                
               </div>
+            </div>
+
+            
               <div class="empty-drop-zone" *ngIf="entry.tasks.length === 0">ドラッグ＆ドロップでタスクを移動</div>
             </div>
           </ng-container>

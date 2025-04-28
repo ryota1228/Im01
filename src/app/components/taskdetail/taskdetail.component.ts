@@ -19,6 +19,7 @@ import { FirestoreService } from '../../services/firestore.service';
 export class TaskdetailComponent implements OnInit{
   @Input() task!: Task;
   @Input() projectId!: string;
+  @Input() autoMoveCompletedTasks: boolean = true;
   @Output() closed = new EventEmitter<void>();
 
   sections: Section[] = [];
@@ -32,14 +33,6 @@ export class TaskdetailComponent implements OnInit{
     ? this.task.dueDate.toISOString().substring(0, 10)
     : new Date(this.task.dueDate).toISOString().substring(0, 10);
   }
-
-  // onDueDateChange(dateString: string | null): void {
-  //   if (dateString) {
-  //     this.task.dueDate = new Date(dateString);
-  //   } else {
-  //     this.task.dueDate = null;
-  //   }
-  // }
 
   onDueDateChange(dateStr: string): void {
     this.task.dueDate = dateStr ? new Date(dateStr) : null;
@@ -97,15 +90,15 @@ export class TaskdetailComponent implements OnInit{
       history: Array.isArray(this.task.history) ? this.task.history : [],
     };
   
-    if (updatedTask.status === '完了') {
+    if (updatedTask.status === '完了' && this.autoMoveCompletedTasks === true) {
       updatedTask.section = '完了済';
-  
-      // this.snackBar.open('✔ 完了したタスクを完了済セクションに移動しました', '', {
-      //   duration: 5000,
-      //   horizontalPosition: 'end',
-      //   verticalPosition: 'bottom',
-      //   panelClass: ['complete-snackbar']
-      // });
+    
+      this.snackBar.open('✔ タスクを完了済セクションに移動しました', '', {
+        duration: 5000,
+        horizontalPosition: 'end',
+        verticalPosition: 'bottom',
+        panelClass: ['complete-snackbar']
+      });
     }
   
     try {

@@ -7,11 +7,12 @@
         <button class="close-button" (click)="closePanel()">×</button>
 
         <app-taskdetail
-          [task]="selectedTask"
-          [projectId]="projectId"
-          (closed)="closePanel()"
-        ></app-taskdetail>
-      </div>
+        [task]="selectedTask"
+        [projectId]="projectId!"
+        [autoMoveCompletedTasks]="autoMoveCompletedTasks"
+        (closed)="onTaskPanelClosed()">
+      </app-taskdetail>
+    </div>
     </div>
   </ng-container>
 </div>

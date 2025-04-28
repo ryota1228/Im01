@@ -84,8 +84,6 @@ export class FirestoreService {
     return setDoc(taskRef, data, { merge: true });
   }
   
-  
-
   deleteDocument(path: string): Promise<void> {
     const ref = doc(this.firestore, path);
     return deleteDoc(ref);
@@ -129,6 +127,11 @@ export class FirestoreService {
   getUsers(): Observable<{ uid: string, displayName: string }[]> {
     const usersRef = collection(this.firestore, 'users');
     return collectionData(usersRef, { idField: 'uid' }) as Observable<{ uid: string, displayName: string }[]>;
+  }
+
+  async updateUserSettings(projectId: string, userId: string, data: any): Promise<void> {
+    const ref = doc(this.firestore, `projects/${projectId}/userSettings/${userId}`);
+    return setDoc(ref, data, { merge: true });
   }
 
 
@@ -187,5 +190,20 @@ export class FirestoreService {
       .filter(t => t.section === sectionTitle)
       .map(t => this.updateDocument(`${taskPath}/${t.id}`, { section: targetSectionTitle }));
     return Promise.all(movePromises).then(() => {});
-  }  
+  }
+
+  async getUserSettings(projectId: string, userId: string): Promise<any> {
+    const settingsRef = doc(this.firestore, `projects/${projectId}/userSettings/${userId}`);
+    const snap = await getDoc(settingsRef);
+    if (snap.exists()) {
+      return snap.data();
+    }
+    return null;
+  }
+  
+  async saveUserSettings(projectId: string, userId: string, settings: any): Promise<void> {
+    const settingsRef = doc(this.firestore, `projects/${projectId}/userSettings/${userId}`);
+    await setDoc(settingsRef, settings, { merge: true }); // merge:trueで上書きじゃなく追記
+  }
+
 }

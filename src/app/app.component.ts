@@ -23,6 +23,7 @@ export class AppComponent implements OnInit {
   selectedTask: Task | null = null;
   isTaskPanelOpen = false;
   projectId: string | null = null;
+  autoMoveCompletedTasks: boolean = true;
 
   constructor(private taskPanelService: TaskPanelService) {}
 
@@ -32,7 +33,22 @@ export class AppComponent implements OnInit {
     this.taskPanelService.isOpen$.subscribe(open => this.isTaskPanelOpen = open);
   }
 
+  openTaskPanel(task: Task, projectId: string, autoMoveCompletedTasks: boolean): void {
+    this.selectedTask = task;
+    this.projectId = projectId;
+    this.autoMoveCompletedTasks = autoMoveCompletedTasks;
+    this.isTaskPanelOpen = true;
+  }
+
   closePanel(): void {
-    this.taskPanelService.closePanel();
+    this.isTaskPanelOpen = false;
+    this.selectedTask = null;
+    this.projectId = null;
+  }
+
+  onTaskPanelClosed(): void {
+    this.isTaskPanelOpen = false;
+    this.selectedTask = null;
+    this.projectId = null;
   }
 }

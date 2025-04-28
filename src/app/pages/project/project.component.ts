@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, updateDoc, setDoc } from '@angular/fire/firestore';
 import { Task } from '../../models/task.model';
 import { Section } from '../../models/section.model';
 import { FirestoreService } from '../../services/firestore.service';
@@ -18,11 +18,15 @@ import { DeleteSectionDialogComponent } from '../../components/delete-section-di
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { Timestamp } from '@angular/fire/firestore';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { AppComponent } from '../../app.component';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-project',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, MatDialogModule, MatButtonModule, MatSnackBarModule, MatCheckboxModule],
+  imports: [CommonModule, FormsModule, DragDropModule, MatDialogModule, MatButtonModule, MatSnackBarModule, MatCheckboxModule, MatSlideToggleModule],
   templateUrl: './project.component.html',
   styleUrls: ['./project.component.css'],
 })
@@ -59,6 +63,11 @@ export class ProjectComponent implements OnInit {
   sections: Section[] = [];
   tasks: Task[] = []; 
 
+  today: Date = new Date();
+
+  autoMoveCompletedTasks: boolean = true;
+  currentUserId: string | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private firestoreService: FirestoreService,
@@ -66,19 +75,42 @@ export class ProjectComponent implements OnInit {
     private dialog: MatDialog,
     private taskPanelService: TaskPanelService,
     private snackBar: MatSnackBar,
+    private appComponent: AppComponent,
+    private authService: AuthService,
   ) {}
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.route.paramMap.subscribe(async params => {
-      const id = params.get('id');
+      const id = params.get('id') ?? '';
       if (id) {
         this.projectId = id;
-        await this.loadProjectData();
-        this.loadProjectTitle(this.projectId);
-        this.loadSectionsAndTasks(this.projectId);
       }
+      const user = await this.authService.getCurrentUser();
+      if (user) {
+        this.currentUserId = user.uid;
+        await this.loadUserSettings();
+      }
+  
+      await this.loadProjectData();
+      this.loadProjectTitle(this.projectId!);
+      this.loadSectionsAndTasks(this.projectId!);
     });
   }
+
+  async loadUserSettings(): Promise<void> {
+    if (!this.projectId || !this.currentUserId) return;
+  
+    const setting = await this.firestoreService.getUserSettings(this.projectId, this.currentUserId);
+  
+    if (setting && typeof setting.autoMoveCompletedTasks === 'boolean') {
+      this.autoMoveCompletedTasks = setting.autoMoveCompletedTasks;
+    } else {
+      await this.firestoreService.saveUserSettings(this.projectId, this.currentUserId, {
+        autoMoveCompletedTasks: true,
+      });
+      this.autoMoveCompletedTasks = true;
+    }
+  }  
 
   async loadProjectTitle(projectId: string) {
     const ref = doc(this.firestore, `projects/${projectId}`);
@@ -100,11 +132,10 @@ export class ProjectComponent implements OnInit {
 
     const updates: any = { status: newStatus };
 
-    if (newStatus === '完了') {
-      updates.section = this.COMPLETED_SECTION_TITLE;
-      updates.completionOrder = Date.now();
-
-      this.snackBar.open('完了済に移動しました', '', {
+    if (newStatus === '完了' && this.autoMoveCompletedTasks === true) {
+      updates.section = '完了済';
+    
+      this.snackBar.open('✔ タスクを完了済セクションに移動しました', '', {
         duration: 5000,
         horizontalPosition: 'end',
         verticalPosition: 'bottom',
@@ -124,6 +155,11 @@ export class ProjectComponent implements OnInit {
       this.sectionOrder = sections.sort((a, b) => a.order - b.order);
       this.availableSections = ['すべて', ...sections.map(s => s.title)];
       this.firestoreService.getTasksByProjectId(projectId).subscribe(tasks => {
+        tasks.forEach(task => {
+          if(task.dueDate && (task.dueDate as any).toDate) {
+            task.dueDate = (task.dueDate as Timestamp).toDate();
+          }
+        });
         const grouped: { [key: string]: Task[] } = {};
         for (const task of tasks) {
           const section = task.section || '未分類';
@@ -195,6 +231,13 @@ export class ProjectComponent implements OnInit {
       this.loadSectionsAndTasks(this.projectId!);
     });
   }
+
+  async onToggleAutoMoveCompletedTasks(): Promise<void> {
+    if (!this.projectId || !this.currentUserId) return;
+    await this.firestoreService.saveUserSettings(this.projectId, this.currentUserId, {
+      autoMoveCompletedTasks: this.autoMoveCompletedTasks,
+    });
+  }  
 
   toggleSection(title: string): void {
     if (this.collapsedSections.has(title)) {
@@ -315,6 +358,7 @@ export class ProjectComponent implements OnInit {
   openTaskPanel(task: Task): void {
     if (!this.projectId) return;
     this.taskPanelService.openPanel(task, this.projectId);
+    this.appComponent.openTaskPanel(task, this.projectId, this.autoMoveCompletedTasks);
   }
 
   filterDialogOpen(): void {
@@ -379,13 +423,19 @@ async loadProjectData() {
   }
 }
 
-// async loadProjectData(projectId: string) {
-//   const project = await this.firestoreService.getDocument<any>(`projects/${projectId}`);
-//   if (project?.memberIds) {
-//     const users = await this.firestoreService.getUsersByIds(project.memberIds);
-//     this.members = users;
-//   }
-// }
+isOverdue(task: Task): boolean {
+  if (!task.dueDate) return false;
+  const now = new Date();
+  const due = task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate);
+  return task.status !== '完了' && due < now;
+}
+
+formatDueDate(dueDate: any): string {
+  if(!dueDate) return '期限未設定';
+  const date = dueDate instanceof Date ? dueDate : new Date(dueDate);
+  if (isNaN(date.getTime())) return '期限未設定';
+  return date.toISOString().split('T')[0];
+}
 
   getAssigneeName(uid: string): string {
     if (!uid) return '未設定';
