@@ -49,7 +49,7 @@
               <h3 (dblclick)="enableSectionEdit(entry.section)" class="section-title">
                 {{ entry.section.title }}
               </h3>
-              <ng-container *ngIf="entry.section.title !== '完了済み' && entry.section.isFixed !== true">
+              <ng-container *ngIf="entry.section.title !== '完了済' && entry.section.isFixed !== true">
                 <button (click)="enableSectionEdit(entry.section)">編集</button>
                 <button (click)="deleteSectionDialogOpen(entry.section)">削除</button>
               </ng-container>
@@ -68,7 +68,14 @@
 
           <div *ngIf="addingSection === entry.section.title" class="add-task-form">
             <input type="text" placeholder="タイトル" [(ngModel)]="newTask.title" />
-            <input type="text" placeholder="担当者" [(ngModel)]="newTask.assignee" />
+
+            <select [(ngModel)]="newTask.assignee">
+              <option value="">--未設定--</option>
+              <option *ngFor="let member of members" [value]="member.uid">
+                {{ member.displayName }}
+              </option>
+            </select>
+
             <input type="date" [(ngModel)]="newTask.dueDate" />
             <button (click)="saveTask()">保存</button>
             <button (click)="cancelAddTask()">キャンセル</button>
@@ -97,14 +104,14 @@
                 [ngClass]="'status-' + task.status"
                 (click)="openTaskPanel(task)">
 
-              
-
                 <div class="task-title">{{ task.title }}</div>
                 
                 <div class="task-meta">
-                  <span>担当: {{ task.assignee }}</span>
+                  <span>担当: {{ getAssigneeName(task.assignee) }}</span>
                   <span>期限: {{ task.dueDate?.toDate ? (task.dueDate.toDate() | date: 'yyyy-MM-dd') : (task.dueDate | date: 'yyyy-MM-dd') }}</span>
                   <span>状態: {{ task.status }}</span>
+                  <span>優先度: {{ task.priority }}</span>
+                  <span>進捗率: {{ task.progress }}%</span>
                 </div>
               </div>
               <div class="empty-drop-zone" *ngIf="entry.tasks.length === 0">ドラッグ＆ドロップでタスクを移動</div>

@@ -7,7 +7,7 @@
     <div class="topbar-content">
       <ng-container *ngIf="user$ | async as user">
         <span class="user-email">
-          {{ user.email }}
+          {{ user.displayName }}
         </span>
 
         <button class="logout-btn" (click)="logout()">

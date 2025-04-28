@@ -1,9 +1,11 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, SimpleChanges, OnChanges } from '@angular/core';
 import { Task } from '../../models/task.model';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Firestore } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { FirestoreService } from '../../services/firestore.service';
+import { Section } from '../../models/section.model';
 
 @Component({
   selector: 'app-taskdetail',
@@ -12,12 +14,20 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './taskdetail.component.html',
   styleUrls: ['./taskdetail.component.css'],
 })
-export class TaskdetailComponent {
+
+// implements OnChanges
+
+export class TaskdetailComponent  {
   @Input() task!: Task;
   @Input() projectId!: string;
   @Output() closed = new EventEmitter<void>();
 
-  constructor(private firestore: Firestore) {}
+  userOptions: { uid: string, displayName: string }[] = [];
+  sections: Section[] = [];
+  members: { uid: string, displayName: string }[] = [];
+
+
+  constructor(private firestore: Firestore, private firestoreService: FirestoreService) {}
 
   get dueDateString(): string {
     return this.task?.dueDate

@@ -20,7 +20,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
   styleUrl: './filter-dialog.component.css'
 })
 export class FilterDialogComponent {
-  allStatuses = ['未着手', '進行中', '完了'];
+  allStatuses = ['未着手', '進行中', '確認待ち ', '確認中', '差し戻し', '完了'];
   allSections: string[] = [];
 
   selectedStatusesMap: { [key: string]: boolean } = {};

@@ -23,11 +23,11 @@ import { taskConverter } from '../models/task.model';
 import { Section } from '../models/section.model';
 import { firstValueFrom } from 'rxjs';
 
-
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
 
   isFixed = true
+  
 
   constructor(
     private firestore: Firestore = inject(Firestore)
@@ -38,7 +38,7 @@ export class FirestoreService {
       { title: '目標・マイルストーン', order: 0 },
       { title: 'テンプレート', order: 1 },
       { title: 'やること', order: 2 },
-      { title: '完了済み', order: 3, isFixed: true }
+      { title: '完了済', order: 3, isFixed: true }
     ];
 
     const sectionRef = collection(this.firestore, `projects/${projectId}/sections`);
@@ -63,12 +63,12 @@ export class FirestoreService {
     return addDoc(ref, data);
   }
 
-  setDocument<T extends DocumentData>(
+  setDocument(
     path: string,
-    data: WithFieldValue<T>
+    data: any
   ): Promise<void> {
-    const ref = doc(this.firestore, path);
-    return setDoc(ref, data);
+    const ref = doc(this.firestore, path) as DocumentReference<DocumentData>;
+    return setDoc(ref, data, { merge: true });
   }
 
   updateDocument<T extends DocumentData>(
@@ -77,6 +77,11 @@ export class FirestoreService {
   ): Promise<void> {
     const ref = doc(this.firestore, path) as any;
     return updateDoc(ref, data as UpdateData<T>);
+  }
+
+  updateTask(projectId: string, taskId: string, data: Partial<Task>): Promise<void> {
+    const taskRef = doc(this.firestore, `projects/${projectId}/tasks/${taskId}`);
+    return setDoc(taskRef, data, { merge: true });
   }
   
   
@@ -111,6 +116,22 @@ export class FirestoreService {
     );
   }
 
+  getUsersByIds(userIds: string[]): Promise<{ uid: string, displayName: string }[]> {
+    const userPromises = userIds.map(uid =>
+      this.getDocument<{ displayName: string }>(`users/${uid}`).then(data => ({
+        uid,
+        displayName: data?.displayName ?? '未登録ユーザー'
+      }))
+    );
+    return Promise.all(userPromises);
+  }
+
+  getUsers(): Observable<{ uid: string, displayName: string }[]> {
+    const usersRef = collection(this.firestore, 'users');
+    return collectionData(usersRef, { idField: 'uid' }) as Observable<{ uid: string, displayName: string }[]>;
+  }
+
+
   addTask(projectId: string, task: any): Promise<void> {
     const taskCollection = collection(this.firestore, `projects/${projectId}/tasks`);
     return addDoc(taskCollection, task).then(() => {});
@@ -127,6 +148,16 @@ export class FirestoreService {
       collectionData(sectionRef, { idField: 'id' }) as Observable<Section[]>
     );
   }
+
+  getProjectMemberIds(projectId: string): Promise<string[]> {
+    const projectRef = doc(this.firestore, `projects/${projectId}`);
+    return getDoc(projectRef).then(snapshot => {
+      if (!snapshot.exists()) return [];
+      const data = snapshot.data();
+      return data?.['memberIds'] ?? [];
+    });
+  }
+  
 
   addSection(projectId: string, section: { title: string; order: number }) {
     const sectionRef = collection(this.firestore, `projects/${projectId}/sections`);
@@ -153,7 +184,8 @@ export class FirestoreService {
     const taskPath = `projects/${projectId}/tasks`;
     const tasks = await this.getTasksByProjectIdOnce(projectId);
     const movePromises = tasks
-    .filter(t => t.section === sectionTitle)
-    .map(t => this.updateDocument(`${taskPath}/${t.id}`, { section: targetSectionTitle }));
-  }
+      .filter(t => t.section === sectionTitle)
+      .map(t => this.updateDocument(`${taskPath}/${t.id}`, { section: targetSectionTitle }));
+    return Promise.all(movePromises).then(() => {});
+  }  
 }

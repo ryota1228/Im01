@@ -7,18 +7,22 @@
   </div>
 
   <div class="form-group">
-    <label>担当</label>
-    <input [(ngModel)]="task.assignee" type="text" />
+    <label for="assignee">担当:</label>
+    <select [(ngModel)]="task.assignee">
+      <option value="">--未設定--</option>
+      <option *ngFor="let member of members" [value]="member.uid">
+        {{ member.displayName }}
+      </option>
+    </select>
   </div>
+  
 
   <div class="form-group">
     <label>期限</label>
-    <input
-      type="date"
-      [ngModel]="dueDateString"
-      (ngModelChange)="onDueDateChange($event)"
-    />
-  </div>
+
+    <input type="date" [(ngModel)]="dueDateString" (ngModelChange)="onDueDateChange($event)" />
+    
+  </div>  
 
   <div class="form-group">
     <label>優先度</label>
@@ -51,18 +55,18 @@
   </div>
 
   <div class="form-group">
-    <label>見積もり（h）</label>
+    <label>見積もり（min）</label>
     <input type="number" min="0" [(ngModel)]="task.estimate" />
   </div>
 
   <div class="form-group">
-    <label>実績（h）</label>
+    <label>実績（min）</label>
     <input type="number" min="0" [(ngModel)]="task.actual" />
   </div>
 
   <div class="form-group">
     <label>タスク詳細</label>
-    <textarea [(ngModel)]="task.description"></textarea>
+    <textarea [(ngModel)]="task.description" placeholder="タスクの詳細を入力してください"></textarea>
   </div>
 
   <div class="form-group">
@@ -77,8 +81,10 @@
 
   <div class="form-group">
     <label>セクション</label>
-    <input [(ngModel)]="task.section" type="text" />
-  </div>
+    <select [(ngModel)]="task.section">
+        <option *ngFor="let section of sections" [value]="section.title">{{ section.title }}</option>
+    </select>
+</div>
 
   <div class="form-actions">
     <button (click)="saveTask()">保存</button>

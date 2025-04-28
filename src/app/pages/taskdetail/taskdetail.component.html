@@ -13,11 +13,15 @@
     <input [(ngModel)]="task.title" placeholder="タイトル" />
   </h2>
 
-  <p>
-    <label>担当:</label>
-    <input [(ngModel)]="task.assignee" />
-  </p>
-
+    <div class="form-group">
+      <label for="assignee">担当:</label>
+      <select [(ngModel)]="task.assignee">
+        <option *ngFor="let user of userOptions" [value]="user.uid">
+          {{ user.displayName }}
+        </option>
+      </select>      
+    </div>
+  
   <p>
     <label>期限:</label>
     <input type="date" [(ngModel)]="dueDateString" />

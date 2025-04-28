@@ -52,7 +52,12 @@ export class ProjectComponent implements OnInit {
   addingNewSection: boolean = false;
   newSectionTitle: string = '';
 
-  readonly COMPLETED_SECTION_TITLE = '完了済み';
+  readonly COMPLETED_SECTION_TITLE = '完了済';
+
+  members: { uid: string, displayName: string }[] = [];
+
+  sections: Section[] = [];
+  tasks: Task[] = []; 
 
   constructor(
     private route: ActivatedRoute,
@@ -64,9 +69,11 @@ export class ProjectComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
-      this.projectId = params.get('id');
-      if (this.projectId) {
+    this.route.paramMap.subscribe(async params => {
+      const id = params.get('id');
+      if (id) {
+        this.projectId = id;
+        await this.loadProjectData();
         this.loadProjectTitle(this.projectId);
         this.loadSectionsAndTasks(this.projectId);
       }
@@ -97,8 +104,8 @@ export class ProjectComponent implements OnInit {
       updates.section = this.COMPLETED_SECTION_TITLE;
       updates.completionOrder = Date.now();
 
-      this.snackBar.open('完了済みに移動しました', '', {
-        duration: 3000,
+      this.snackBar.open('完了済に移動しました', '', {
+        duration: 5000,
         horizontalPosition: 'end',
         verticalPosition: 'bottom',
         panelClass: ['complete-snackbar']
@@ -292,7 +299,7 @@ export class ProjectComponent implements OnInit {
       assignee: this.newTask.assignee || '',
       dueDate: dueDate,
       status: '未着手',
-      section: this.addingSection,
+      section: this.addingSection!,
       order: 0,
     };
     await this.firestoreService.addTask(this.projectId, task);
@@ -352,4 +359,37 @@ reOrderTasksByDueDate(): void{
     Promise.all(updates).then(() => this.loadSectionsAndTasks(this.projectId!));
   });
 }
+
+async loadProjectData() {
+  if (!this.projectId) return;
+
+
+  this.firestoreService.getSections(this.projectId).subscribe(sections => {
+    this.sections = sections;
+  });
+
+  this.firestoreService.getTasksByProjectId(this.projectId).subscribe(tasks => {
+    this.tasks = tasks;
+  });
+
+  const project = await this.firestoreService.getDocument<any>(`projects/${this.projectId}`);
+  if (project?.memberIds) {
+    const users = await this.firestoreService.getUsersByIds(project.memberIds);
+    this.members = users.map(user => ({ uid: user.uid, displayName: user.displayName }));
+  }
+}
+
+// async loadProjectData(projectId: string) {
+//   const project = await this.firestoreService.getDocument<any>(`projects/${projectId}`);
+//   if (project?.memberIds) {
+//     const users = await this.firestoreService.getUsersByIds(project.memberIds);
+//     this.members = users;
+//   }
+// }
+
+  getAssigneeName(uid: string): string {
+    if (!uid) return '未設定';
+    const member = this.members.find(m => m.uid === uid);
+    return member ? member.displayName : '未登録ユーザー';
+  }
 }

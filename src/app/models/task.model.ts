@@ -29,14 +29,14 @@ export const taskConverter: FirestoreDataConverter<Task> = {
       section: data['section'],
       status: data['status'],
       priority: data['priority'],
-      progress: data['progress'],
+      progress: data['progress'] ?? 0,
       estimate: data['estimate'],
       actual: data['actual'],
       description: data['description'],
       chat: data['chat'],
       history: data['history'] ?? [],
       order: data['order'],
-      completionOrder: data['completionOrder'],
+      completionOrder: data['completionOrder'] ?? null,
     };
   },
 
