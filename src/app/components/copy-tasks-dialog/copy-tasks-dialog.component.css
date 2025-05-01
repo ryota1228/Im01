@@ -1,0 +1,42 @@
+mat-form-field {
+    margin-top: 16px;
+    width: 100%;
+  }
+  
+  mat-dialog-content {
+    padding: 0 24px 8px 24px;
+    min-width: 280px;
+  }
+  
+  mat-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 8px 24px 24px 24px;
+  }
+  
+  button {
+    min-width: 80px;
+  }
+  
+  mat-label {
+    font-weight: bold;
+  }
+  
+  .copy-tasks-dialog-select-panel {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid #ccc !important;
+  }
+  
+  .copy-tasks-dialog-select-option {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  .copy-tasks-dialog-select-option:hover {
+    background-color: #f0f0f0 !important;
+  }
+  

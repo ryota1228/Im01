@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { TaskdetailComponent } from './components/taskdetail/taskdetail.component';
 import { TaskPanelService } from './services/task-panel.service';
 import { ViewEncapsulation } from '@angular/core';
+import { ViewChild } from '@angular/core';
 
 @Component({
   selector: 'app-root',
@@ -27,6 +28,8 @@ export class AppComponent implements OnInit {
 
   constructor(private taskPanelService: TaskPanelService) {}
 
+  @ViewChild('taskDetailComponent') taskDetailComp?: TaskdetailComponent;
+
   ngOnInit(): void {
     this.taskPanelService.selectedTask$.subscribe(task => this.selectedTask = task);
     this.taskPanelService.projectId$.subscribe(id => this.projectId = id);
@@ -40,10 +43,11 @@ export class AppComponent implements OnInit {
     this.isTaskPanelOpen = true;
   }
 
-  closePanel(): void {
-    this.isTaskPanelOpen = false;
-    this.selectedTask = null;
-    this.projectId = null;
+  async closePanel(): Promise<void> {
+    if (this.taskDetailComp) {
+      await this.taskDetailComp.saveTask();
+    }
+    this.onTaskPanelClosed();
   }
 
   onTaskPanelClosed(): void {
@@ -51,4 +55,12 @@ export class AppComponent implements OnInit {
     this.selectedTask = null;
     this.projectId = null;
   }
+
+  onOverlayClick(): void {
+    const detail = document.querySelector('app-taskdetail') as any;
+    if (detail?.onClosePanel) {
+      detail.onClosePanel();
+    }
+  }
+  
 }

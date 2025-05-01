@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Firestore, doc, getDoc, updateDoc, setDoc } from '@angular/fire/firestore';
 import { Task } from '../../models/task.model';
@@ -22,13 +22,14 @@ import { Timestamp } from '@angular/fire/firestore';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { AppComponent } from '../../app.component';
 import { AuthService } from '../../services/auth.service';
-
+import { CopyTasksDialogComponent } from '../../components/copy-tasks-dialog/copy-tasks-dialog.component';
 @Component({
   selector: 'app-project',
   standalone: true,
   imports: [CommonModule, FormsModule, DragDropModule, MatDialogModule, MatButtonModule, MatSnackBarModule, MatCheckboxModule, MatSlideToggleModule],
   templateUrl: './project.component.html',
   styleUrls: ['./project.component.css'],
+  encapsulation: ViewEncapsulation.None
 })
 export class ProjectComponent implements OnInit {
   projectId: string | null = null;
@@ -442,4 +443,43 @@ formatDueDate(dueDate: any): string {
     const member = this.members.find(m => m.uid === uid);
     return member ? member.displayName : '未登録ユーザー';
   }
+
+  calculateEstimateSum(tasks: Task[]): number {
+    return tasks.reduce((sum, task) => sum + (task.estimate || 0), 0);
+  }
+  
+  calculateActualSum(tasks: Task[]): number {
+    return tasks.reduce((sum, task) => sum + (task.actual || 0), 0);
+  }  
+
+  copyTasksDialogOpen(section: Section): void {
+    const otherSections = this.sectionOrder.filter(s => s.id !== section.id);
+    const dialogRef = this.dialog.open(CopyTasksDialogComponent, {
+      panelClass: 'copy-tasks-dialog-panel',
+      data: { sections: otherSections }
+    });
+  
+    dialogRef.afterClosed().subscribe(async (targetSectionId: string | undefined) => {
+      if (!targetSectionId || !this.projectId) return;
+  
+      const tasksToCopy = this.sectionsWithTasks.find(e => e.section.id === section.id)?.tasks || [];
+  
+      const targetSection = this.sectionOrder.find(s => s.id === targetSectionId);
+      if (!targetSection) return;
+  
+      for (const task of tasksToCopy) {
+        const newTask = {
+          ...task,
+          id: '',
+          title: task.title + '（複製）',
+          section: targetSection.title,
+          order: null
+        };
+        await this.firestoreService.addTask(this.projectId, newTask);
+      }
+  
+      this.loadSectionsAndTasks(this.projectId);
+    });
+  }
+  
 }

@@ -1,93 +1,148 @@
 <div class="task-detail-panel" *ngIf="task">
   <button class="back-button" (click)="onClosePanel()">← プロジェクトに戻る</button>
 
-  <div class="form-group">
-    <label>タイトル</label>
-    <input [(ngModel)]="task.title" type="text" />
-  </div>
+  <div class="form-scroll-area">
+    <div class="form-group">
+      <label>タイトル</label>
+      <input [(ngModel)]="task.title" type="text" />
+    </div>
 
-  <div class="form-group">
-    <label for="assignee">担当:</label>
-    <select [(ngModel)]="task.assignee">
-      <option value="">--未設定--</option>
-      <option *ngFor="let member of members" [value]="member.uid">
-        {{ member.displayName }}
-      </option>
-    </select>
-  </div>
-  
+    <div class="form-group">
+      <label>担当</label>
+      <select [(ngModel)]="task.assignee">
+        <option value="">--未設定--</option>
+        <option *ngFor="let member of members" [value]="member.uid">
+          {{ member.displayName }}
+        </option>
+      </select>
+    </div>
 
-  <div class="form-group">
-    <label>期限</label>
+    <div class="form-group">
+      <label>期限</label>
+      <input type="date" [(ngModel)]="dueDateString" (ngModelChange)="onDueDateChange($event)" />
+    </div>
 
-    <input type="date" [(ngModel)]="dueDateString" (ngModelChange)="onDueDateChange($event)" />
-    
-  </div>  
+    <div class="form-group">
+      <label>優先度</label>
+      <select [(ngModel)]="task.priority">
+        <option value="">未設定</option>
+        <option value="低">低</option>
+        <option value="中">中</option>
+        <option value="高">高</option>
+        <option value="最優先">最優先</option>
+      </select>
+    </div>
 
-  <div class="form-group">
-    <label>優先度</label>
-    <select [(ngModel)]="task.priority">
-      <option value="">未設定</option>
-      <option value="低">低</option>
-      <option value="中">中</option>
-      <option value="高">高</option>
-      <option value="最優先">最優先</option>
-    </select>
-  </div>
+    <div class="form-group">
+      <label>状態</label>
+      <select [(ngModel)]="task.status">
+        <option value="未着手">未着手</option>
+        <option value="進行中">進行中</option>
+        <option value="完了">完了</option>
+        <option value="確認待ち">確認待ち</option>
+        <option value="確認中">確認中</option>
+        <option value="差し戻し">差し戻し</option>
+      </select>
+    </div>
 
-  <div class="form-group">
-    <label>状態</label>
-    <select [(ngModel)]="task.status">
-      <option value="未着手">未着手</option>
-      <option value="進行中">進行中</option>
-      <option value="完了">完了</option>
-      <option value="確認待ち">確認待ち</option>
-      <option value="確認中">確認中</option>
-      <option value="差し戻し">差し戻し</option>
-    </select>
-  </div>
+    <div class="form-group">
+      <label>進捗率 (%)</label>
+      <select [(ngModel)]="task.progress">
+        <option *ngFor="let p of [0,10,20,30,40,50,60,70,80,90,100]" [value]="p">{{ p }}</option>
+      </select>
+    </div>
 
-  <div class="form-group">
-    <label>進捗率 (%)</label>
-    <select [(ngModel)]="task.progress">
-      <option *ngFor="let p of [0,10,20,30,40,50,60,70,80,90,100]" [value]="p">{{ p }}</option>
-    </select>
-  </div>
+    <div class="form-group">
+      <label>見積もり（min）</label>
+      <input type="number" min="0" [(ngModel)]="task.estimate" />
+    </div>
 
-  <div class="form-group">
-    <label>見積もり（min）</label>
-    <input type="number" min="0" [(ngModel)]="task.estimate" />
-  </div>
+    <div class="form-group">
+      <label>実績（min）</label>
+      <input type="number" min="0" [(ngModel)]="task.actual" />
+    </div>
 
-  <div class="form-group">
-    <label>実績（min）</label>
-    <input type="number" min="0" [(ngModel)]="task.actual" />
-  </div>
+    <div class="form-group">
+      <label>タスク詳細</label>
+      <textarea [(ngModel)]="task.description" placeholder="タスクの詳細を入力してください"></textarea>
+    </div>
 
-  <div class="form-group">
-    <label>タスク詳細</label>
-    <textarea [(ngModel)]="task.description" placeholder="タスクの詳細を入力してください"></textarea>
-  </div>
+    <div class="form-group">
+      <label>チャット</label>
+      <textarea [(ngModel)]="task.chat" placeholder="チャットログ"></textarea>
+    </div>
 
-  <div class="form-group">
-    <label>チャット</label>
-    <textarea [(ngModel)]="task.chat"></textarea>
-  </div>
-
-  <div class="form-group">
-    <label>履歴</label>
-    <textarea [(ngModel)]="task.history"></textarea>
-  </div>
-
-  <div class="form-group">
-    <label>セクション</label>
-    <select [(ngModel)]="task.section">
+    <div class="form-group">
+      <label>セクション</label>
+      <select [(ngModel)]="task.section">
         <option *ngFor="let section of sections" [value]="section.title">{{ section.title }}</option>
-    </select>
-</div>
+      </select>
+    </div>
 
+
+    <div class="form-group history-toggle">
+      <div class="toggle-row">
+        <button class="toggle-button" (click)="toggleHistory()">
+          {{ isHistoryOpen ? '▲ 更新履歴（クリックで非表示）' : '▼ 更新履歴（クリックで表示）' }}
+        </button>
+      </div>
+    
+      <!-- <div *ngIf="isHistoryOpen" class="history-content-scrollable">
+        <ng-container *ngFor="let entry of reversedHistory">
+          <ng-container *ngIf="entry.field === 'assignee'; else normalChange">
+          {{ historyUserMap.get(entry.before + '') || entry.before }} →
+          {{ historyUserMap.get(entry.after + '') || entry.after }}
+        </ng-container>
+      </ng-container>
+        <ng-template #normalChange>
+          {{ entry.before }} → {{ entry.after }}
+        </ng-template>
+        <div class="history-meta" *ngIf="entry.changedBy || entry.timestamp">
+          <span *ngIf="entry.changedBy">
+            {{ historyUserMap.get(entry.changedBy + '') || entry.changedBy }} が
+          </span>
+          <span *ngIf="entry.timestamp | safeDate as ts">
+            {{ ts }}
+          </span>
+        </div>
+        
+      </div> -->
+
+      <div *ngIf="isHistoryOpen" class="history-content-scrollable">
+        <ng-container *ngFor="let entry of reversedHistory">
+          <div *ngIf="entry.field && (entry.before !== undefined || entry.after !== undefined)" class="history-entry" [hidden]="!entry.before && !entry.after && !entry.changedBy && !entry.timestamp">
+            <strong>{{getFieldLabel(entry.field)}}：</strong>
+
+            <ng-container *ngIf="entry.field === 'assignee'; else normalChange">
+              {{historyUserMap.get(entry.before + '') || entry.before}} →
+              {{historyUserMap.get(entry.after + '') || entry.after}}
+            </ng-container>
+
+            <ng-template #normalChange>
+              {{entry.before}} → {{entry.after}}
+            </ng-template>
+
+            <div class="history-meta" *ngIf="entry.changedBy || entry.timestamp">
+              <span *ngIf="entry.changedBy">
+                {{historyUserMap.get(entry.changedBy + '') || entry.changedBy}} が
+              </span>
+              <span *ngIf="entry.timestamp | safeDate as ts">
+                {{ts | date:'yyyy/MM/dd HH:mm'}}に更新
+              </span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+
+
+    </div>       
+    
   <div class="form-actions">
     <button (click)="saveTask()">保存</button>
+    <button (click)="onClosePanel()">キャンセル</button>
     <button (click)="deleteTask()">削除</button>
+    <button (click)="openDuplicateDialog()">複製</button>
   </div>
 </div>
+

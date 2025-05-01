@@ -1,5 +1,13 @@
 import { DocumentData, FirestoreDataConverter } from '@angular/fire/firestore';
 
+export interface TaskHistoryEntry {
+  field: string;
+  before: string | number | null;
+  after: string | number | null;
+  timestamp: Date | string;
+  changedBy: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -13,14 +21,33 @@ export interface Task {
   actual?: number;
   description?: string;
   chat?: string;
-  history?: string[];
+  history?: TaskHistoryEntry[];
   order?: number | null;
   completionOrder?: number | null;
 }
 
+function convertToDate(ts: any): Date | null {
+  if (!ts) return null;
+
+  if (typeof ts.toDate === 'function') {
+    return ts.toDate();
+  }
+
+  if (typeof ts.seconds === 'number' && typeof ts.nanoseconds === 'number') {
+    return new Date(ts.seconds * 1000 + Math.floor(ts.nanoseconds / 1_000_000));
+  }
+
+  const parsed = new Date(ts);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+
 export const taskConverter: FirestoreDataConverter<Task> = {
   fromFirestore(snapshot, options) {
     const data = snapshot.data(options);
+
+    console.log('[DEBUG] Firestoreから取得したhistory:', data['history']);
+
     return {
       id: snapshot.id,
       title: data['title'],
@@ -34,7 +61,10 @@ export const taskConverter: FirestoreDataConverter<Task> = {
       actual: data['actual'],
       description: data['description'],
       chat: data['chat'],
-      history: data['history'] ?? [],
+      history: (data['history'] ?? []).map((h: any) => ({
+        ...h,
+        timestamp: convertToDate(h.timestamp)
+      })),
       order: data['order'],
       completionOrder: data['completionOrder'] ?? null,
     };
@@ -58,4 +88,4 @@ export const taskConverter: FirestoreDataConverter<Task> = {
       completionOrder: task.completionOrder,
     };
   }
-};
+}

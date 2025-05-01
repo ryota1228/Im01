@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>タスクの複製</h2>
+
+<div mat-dialog-content>
+  <mat-form-field appearance="fill" style="width: 100%;">
+    <mat-label>コピー先セクションを選択</mat-label>
+    <mat-select [(ngModel)]="selectedSectionId" panelClass="copy-tasks-dialog-select-panel">
+      <mat-option *ngFor="let section of sections" [value]="section.id" class="copy-tasks-dialog-select-option">
+        {{ section.title }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">キャンセル</button>
+  <button mat-raised-button color="primary" (click)="onConfirm()" [disabled]="!selectedSectionId">
+    複製
+  </button>
+</div>
