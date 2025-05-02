@@ -1,4 +1,9 @@
-
-<input type="text" [(ngModel)]="newTitle" placeholder="新規セクション名を入力" />
-<button (click)="onConfirm()">保存</button>
-<button (click)="onCancel()">キャンセル</button>
+<div class="section-dialog">
+    <input class="section-input" type="text" [(ngModel)]="newTitle" placeholder="新規セクション名を入力" />
+  
+    <div class="section-actions">
+      <button class="custom-button cancel-button" (click)="onCancel()">キャンセル</button>
+      <button class="custom-button apply-button" (click)="onConfirm()">保存</button>
+    </div>
+  </div>
+  

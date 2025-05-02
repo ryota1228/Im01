@@ -1,73 +1,95 @@
-<div class="project-wrapper">
-  <div class="project-header">
-    <div class="header-row">
-      <input [(ngModel)]="projectTitle" (blur)="updateProjectTitle()" class="project-title-input" placeholder="プロジェクト名を入力" />
-      <div class="project-controls">
-        <button (click)="currentView = 'list'" [class.active]="currentView === 'list'">一覧表示</button>
-        <button (click)="currentView = 'calendar'" [class.active]="currentView === 'calendar'">カレンダー表示</button>
-        <button class="members-button">参加者</button>
+<div class="project-wrapper" style="overflow-y: auto; padding-right: 16px; box-sizing: border-box;">
+
+  <div class="project-header" style="position: sticky; top: 0; z-index: 1000; background: #f1f5f9;">
+    <!-- タイトル + 表示切り替え -->
+    <div class="header-top-row">
+      <input
+        [(ngModel)]="projectTitle"
+        (blur)="updateProjectTitle()"
+        class="project-title-input"
+        placeholder="プロジェクト名を入力"
+      />
+
+      <div class="view-switch-group">
+        <button class="view-button" [class.active]="currentView === 'list'" (click)="currentView = 'list'">一覧表示</button>
+        <button class="view-button" [class.active]="currentView === 'calendar'" (click)="currentView = 'calendar'">カレンダー表示</button>
+        <button class="member-button" (click)="openMemberDialog()">メンバー管理</button>
       </div>
     </div>
-    
-    <div class="header-row">
-      <div class="filter-controls">
-        <input type="text" [(ngModel)]="searchKeyword" placeholder="タイトル・担当者で検索" />
-        <button (click)="sortDialogOpen()">ソート</button>
-        <button (click)="filterDialogOpen()">フィルター</button>
-        <button (click)="addSectionDialogOpen()">セクション追加</button>
 
-        <!-- <mat-slide-toggle [(ngModel)]="autoMoveCompletedTasks" (change)="onToggleAutoMoveCompletedTasks()" class="auto-move-toggle">
-          完了タスクを自動で完了済セクションに移動
-        </mat-slide-toggle> -->
+    <!-- フィルター操作群 -->
+    <div class="header-control-row">
+      <input type="text" [(ngModel)]="searchKeyword" class="search-input" placeholder="タイトル・担当者で検索" />
+      <button class="control-button" (click)="sortDialogOpen()">⇅ ソート</button>
+      <button class="control-button" (click)="filterDialogOpen()">⛶ フィルター</button>
+      <button class="control-button" (click)="addSectionDialogOpen()" [disabled]="isViewer">＋ セクション追加</button>
 
-
+      <div class="auto-move-wrapper">
         <label class="auto-move-toggle">
-          <input
-            type="checkbox"
-            [(ngModel)]="autoMoveCompletedTasks"
-            (change)="onToggleAutoMoveCompletedTasks()"
-          />
+          <input type="checkbox" [(ngModel)]="autoMoveCompletedTasks" (change)="onToggleAutoMoveCompletedTasks()" />
           <span class="toggle-switch"></span>
           <span class="toggle-label">完了タスクを自動で完了済セクションに移動</span>
         </label>
-        
+      </div>      
+    </div>
+  </div>
 
-
-
+  <div *ngIf="currentView === 'list'" class="task-list-view2">
+    <div class="section-drop-list-fixed2">
+      <div class="task-section-fixed2">
+        <div class="task-header-section-wrapper2">
+          <div class="task-header static-header">
+            <div class="task-content">
+              <div class="task-title">タスク名</div>
+              <div class="task-meta-horizontal">
+                <span class="meta-item assignee">担当者</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item dueDate">期限</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item status">ステータス</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item priority">優先度</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item progress">進捗率</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item estimate">見積もり</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item actual">実績</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  
-    
   </div>
 
   <div *ngIf="currentView === 'list'" class="task-list-view" #scrollContainer>
-
-    <div class="section-drop-list-fixed">
+    <!-- <div class="section-drop-list-fixed">
       <div class="task-section-fixed">
         <div class="task-header-section-wrapper">
-  <div class="task-header static-header">
-    <div class="task-content">
-      <div class="task-title">タスク名</div>
-      <div class="task-meta-horizontal">
-        <span class="meta-item assignee">担当者</span>
-        <span class="meta-separator">｜</span>
-        <span class="meta-item dueDate">期限</span>
-        <span class="meta-separator">｜</span>
-        <span class="meta-item status">ステータス</span>
-        <span class="meta-separator">｜</span>
-        <span class="meta-item priority">優先度</span>
-        <span class="meta-separator">｜</span>
-        <span class="meta-item progress">進捗率</span>
-        <span class="meta-separator">｜</span>
-        <span class="meta-item estimate">見積もり</span>
-        <span class="meta-separator">｜</span>
-        <span class="meta-item actual">実績</span>
+          <div class="task-header static-header">
+            <div class="task-content">
+              <div class="task-title">タスク名</div>
+              <div class="task-meta-horizontal">
+                <span class="meta-item assignee">担当者</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item dueDate">期限</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item status">ステータス</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item priority">優先度</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item progress">進捗率</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item estimate">見積もり</span>
+                <span class="meta-separator">｜</span>
+                <span class="meta-item actual">実績</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
-</div>
-</div>
+    </div> -->
 
     <div
       cdkDropList
@@ -75,14 +97,12 @@
       [cdkDropListData]="sectionsWithTasks"
       (cdkDropListDropped)="onSectionDrop($event)"
     >
-    
       <div
         *ngFor="let entry of sectionsWithTasks"
         cdkDrag
         class="task-section-wrapper"
         [hidden]="selectedSections[0] !== 'すべて' && !selectedSections.includes(entry.section.title)"
       >
-
         <div class="task-section">
           <div class="section-header">
             <span class="arrow" (click)="toggleSection(entry.section.title)">
@@ -98,7 +118,7 @@
                 >
                   {{ entry.section.title }}
                 </h3>
-                <button *ngIf="!entry.section.isFixed" class="delete-section-button" (click)="deleteSectionDialogOpen(entry.section)">セクションを削除</button>
+                
               </ng-container>
 
               <ng-container *ngIf="editingSectionId === entry.section.id">
@@ -109,23 +129,29 @@
             </div>
 
             <div class="add-task-button-wrapper">
-              <button (click)="startAddTask(entry.section.title)">＋タスク追加</button>
+              <button (click)="startAddTask(entry.section.title)" class="section-action-button">＋ 新規タスク追加</button>
             </div>
 
-            <button (click)="copyTasksDialogOpen(entry.section)">タスクを複製</button>
+            <button (click)="copyTasksDialogOpen(entry.section)" class="section-action-button copy-task-button">⧉ セクション内タスクを一括複製</button>
+
+            <button
+                  *ngIf="!entry.section.isFixed"
+                  class="section-action-button delete-section-button"
+                  (click)="deleteSectionDialogOpen(entry.section)"
+                >
+                ⌫ セクションを削除
+              </button>
 
           </div>
 
           <div *ngIf="addingSection === entry.section.title" class="add-task-form">
             <input type="text" placeholder="タイトル" [(ngModel)]="newTask.title" />
-
             <select [(ngModel)]="newTask.assignee">
-              <option value="">--未設定--</option>
+              <option value="">--担当者未設定--</option>
               <option *ngFor="let member of members" [value]="member.uid">
                 {{ member.displayName }}
               </option>
             </select>
-
             <input type="date" [(ngModel)]="newTask.dueDate" />
             <button (click)="saveTask()">保存</button>
             <button (click)="cancelAddTask()">キャンセル</button>
@@ -186,7 +212,7 @@
                     <span class="meta-item progress"></span>
                     <span class="meta-separator"></span>
                     <span class="meta-item">{{ calculateEstimateSum(entry.tasks) }}min</span>
-                    <span class="meta-separator">｜</span>                    
+                    <span class="meta-separator">｜</span>
                     <span class="meta-item">{{ calculateActualSum(entry.tasks) }}min</span>
                   </div>
                 </div>
@@ -205,4 +231,5 @@
   <div *ngIf="currentView === 'calendar'">
     <p>未実装です、、、</p>
   </div>
+
 </div>

@@ -10,3 +10,33 @@ html, body {
     top: 0;
     right: 0;
   }
+  
+  .complete-snackbar{
+    background: #ecfdf3;
+    color: #027a48;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 16px 24px;
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 240px;
+    max-width: 100%;
+    margin: auto;
+  }
+  
+  
+  .task-error-snackbar {
+    background: linear-gradient(to right, #f44336, #e57373);
+    color: white;
+    font-weight: bold;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    min-width: 280px;
+    justify-content: center;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }

@@ -1,0 +1,4 @@
+<h2>プロジェクトに参加</h2>
+<p *ngIf="message">{{ message }}</p>
+<input [(ngModel)]="projectCode" placeholder="プロジェクトコードを入力" />
+<button (click)="joinProject()">参加する</button>

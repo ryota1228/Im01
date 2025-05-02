@@ -1,20 +1,58 @@
-<h2>フィルター条件</h2>
+<h2 class="filter-title">フィルター条件</h2>
 
-<h3>状態</h3>
-<div *ngFor="let status of allStatuses">
-  <mat-checkbox [(ngModel)]="selectedStatusesMap[status]">
-    {{ status }}
-  </mat-checkbox>
+<!-- 状態 -->
+<div class="filter-section">
+  <div class="filter-toggle" (click)="toggleSection('status')">
+    <span>状態</span>
+    <span class="arrow">{{ isOpen.status ? '▲' : '▼' }}</span>
+  </div>
+  <div class="filter-content" *ngIf="isOpen.status">
+    <div class="filter-option" *ngFor="let status of allStatuses">
+      <mat-checkbox class="filter-checkbox" [(ngModel)]="selectedStatusesMap[status]">
+        {{ status }}
+      </mat-checkbox>
+    </div>
+  </div>
 </div>
 
-<h3>セクション</h3>
-<div *ngFor="let section of allSections">
-  <mat-checkbox [(ngModel)]="selectedSectionsMap[section]">
-    {{ section }}
-  </mat-checkbox>
+<!-- 担当者 -->
+<div class="filter-section">
+  <div class="filter-toggle" (click)="toggleSection('assignee')">
+    <span>担当者</span>
+    <span class="arrow">{{ isOpen.assignee ? '▲' : '▼' }}</span>
+  </div>
+  <div class="filter-content" *ngIf="isOpen.assignee">
+    <ng-container *ngIf="allAssignees && allAssignees.length > 0; else loadingAssignees">
+      <div class="filter-option" *ngFor="let assignee of allAssignees">
+        <mat-checkbox class="filter-checkbox" [(ngModel)]="selectedAssigneesMap[assignee]">
+          {{ assignee }}
+        </mat-checkbox>
+      </div>
+    </ng-container>
+    <ng-template #loadingAssignees>
+      <p class="filter-loading">担当者を読み込み中...</p>
+    </ng-template>
+  </div>
 </div>
 
-<div class="dialog-actions">
-  <button mat-button (click)="applyFilters()">OK</button>
-  <button mat-button (click)="onCancel()">キャンセル</button>
+<!-- 優先度 -->
+<div class="filter-section">
+  <div class="filter-toggle" (click)="toggleSection('priority')">
+    <span>優先度</span>
+    <span class="arrow">{{ isOpen.priority ? '▲' : '▼' }}</span>
+  </div>
+  <div class="filter-content" *ngIf="isOpen.priority">
+    <div class="filter-option" *ngFor="let priority of allPriorities">
+      <mat-checkbox class="filter-checkbox" [(ngModel)]="selectedPrioritiesMap[priority]">
+        {{ priority }}
+      </mat-checkbox>
+    </div>
+  </div>
+</div>
+
+<!-- アクション -->
+<div class="filter-actions">
+  <button class="filter-button cancel-button" mat-button (click)="onCancel()">キャンセル</button>
+  <button class="filter-button clear-button" mat-button (click)="onClear()">クリア</button>
+  <button class="filter-button apply-button" mat-raised-button color="primary" (click)="applyFilters()">適用</button>
 </div>

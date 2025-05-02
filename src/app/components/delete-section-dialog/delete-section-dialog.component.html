@@ -1,27 +1,35 @@
-<!-- <h2 mat-dialog-title>削除確認</h2>
-<mat-dialog-content>
-  <p>このセクションには〇〇件のタスクがあります。</p>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button (click)="onCancel()">キャンセル</button>
-  <button mat-button color="warn" (click)="onConfirm()">セクションのみ削除（タスクは保持されます）</button>
-  <button mat-button color="warn" (click)="onConfirm()">セクションと〇件のタスクを削除する</button>
-</mat-dialog-actions> -->
+<div class="delete-section-dialog">
+  <h2 class="delete-section-dialog-title">
+    「{{ sectionTitle }}」セクションを削除
+  </h2>
+  
 
-<h2 mat-dialog-title>セクションを削除</h2>
-      <mat-dialog-content>
-        <p>このセクションには〇〇件のタスクがあります。</p>
-        <mat-radio-group [(ngModel)]="action">
-          <mat-radio-button value="delete">セクションと〇〇件のタスクを削除</mat-radio-button><br>
-          <mat-radio-button value="move">タスクを別のセクションに移動</mat-radio-button>
-        </mat-radio-group>
-        <div *ngIf="action === 'move'">
-          <mat-select [(ngModel)]="targetSectionId" placeholder="移動先セクション">
-            <mat-option *ngFor="let s of data.sections" [value]="s.id">{{ s.title }}</mat-option>
-          </mat-select>
-        </div>
-      </mat-dialog-content>
-      <mat-dialog-actions>
-        <button mat-button (click)="dialogRef.close()">キャンセル</button>
-        <button mat-button (click)="confirm()">実行</button>
-      </mat-dialog-actions>
+  <mat-dialog-content class="delete-section-dialog-content">
+    <p class="delete-section-dialog-description">
+      このセクションには <strong>{{ taskCount }}</strong> 件のタスクがあります。
+    </p>
+
+    <mat-radio-group [(ngModel)]="action" class="delete-section-dialog-radio-group">
+      <mat-radio-button class="delete-section-dialog-radio" value="delete">
+        セクションと {{ taskCount }} 件のタスクを削除
+      </mat-radio-button><br />
+      <mat-radio-button class="delete-section-dialog-radio" value="move">
+        タスクのみ別のセクションに移動
+      </mat-radio-button>
+    </mat-radio-group>
+
+    <mat-form-field appearance="fill" *ngIf="action === 'move'" class="delete-section-dialog-select-field">
+      <mat-label>移動先セクション</mat-label>
+      <mat-select [(ngModel)]="targetSectionId" class="delete-section-dialog-select">
+        <mat-option *ngFor="let s of sections" [value]="s.id" class="delete-section-dialog-option">
+          {{ s.title }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="delete-section-dialog-actions">
+    <button mat-stroked-button color="basic" class="delete-section-dialog-cancel" (click)="cancel()">キャンセル</button>
+    <button mat-raised-button color="warn" class="delete-section-dialog-confirm" (click)="confirm()">実行</button>
+  </mat-dialog-actions>
+</div>

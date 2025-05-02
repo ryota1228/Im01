@@ -1,5 +1,5 @@
 /* ============================ */
-/* 共通レイアウト             */
+/* 共通レイアウト               */
 /* ============================ */
 .project-wrapper {
   display: flex;
@@ -8,17 +8,27 @@
   padding: 0 24px;
   max-width: 1400px;
   margin: 0 auto;
+  overflow-y: auto;
 }
 
+/* ============================ */
+/* プロジェクトヘッダー         */
+/* ============================ */
+
 .project-header {
+  width: calc(100% - 30px);
+  padding: 16px 24px 16px 24px;
   background: #f1f5f9;
-  padding: 16px 24px;
   border-bottom: 1px solid #ccc;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  margin-bottom: 5px;
 }
 
+.header-top-row,
 .header-row {
   display: flex;
   justify-content: space-between;
@@ -29,11 +39,13 @@
 
 .project-title-input {
   flex: 1;
-  min-width: 200px;
-  padding: 6px 12px;
-  font-size: 16px;
+  min-width: 240px;
+  padding: 10px 16px;
+  font-size: 18px;
+  font-weight: bold;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 6px;
+  background: #fff;
 }
 
 .project-controls {
@@ -42,93 +54,271 @@
 }
 
 .project-controls button {
-  margin-left: 12px;
-  padding: 8px 12px;
-  font-weight: bold;
-  cursor: pointer;
+  padding: 8px 14px;
+  font-weight: 500;
   border: none;
+  border-radius: 6px;
   background-color: #e0e0e0;
-  border-radius: 4px;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.project-controls button:hover {
+  background-color: #d5d5d5;
 }
 
 .project-controls button.active {
-  background-color: #1976d2;
+  background: linear-gradient(to right, #1976d2, #2196f3);
   color: white;
 }
 
 .members-button {
   background-color: #4caf50;
-  color: white;
+  color: white !important;
+  margin-left: auto;
+  padding: 6px 12px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
+/* ============================ */
+/* ヘッダー：検索と操作         */
+/* ============================ */
+.header-control-row,
 .filter-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
   align-items: center;
-  margin-bottom: 16px;
+  gap: 12px;
   padding: 12px;
   background: #f5f5f5;
   border: 1px solid #ccc;
   border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.control-button,
+.view-button,
+.member-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(to right, #e3eaf2, #f6f8fa);
+  color: #333;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.control-button:hover,
+.view-button:hover,
+.member-button:hover {
+  background: linear-gradient(to right, #d0d8e0, #ebeff3);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.view-button.active {
+  background: linear-gradient(to right, #1976d2, #2196f3);
+  color: #fff;
+  font-weight: bold;
+}
+
+.member-button {
+  background: linear-gradient(to right, #43a047, #66bb6a);
+  color: white;
+  margin-left: 4px;
+  margin-right: 4px;
+}
+
+.member-button:hover {
+  background: linear-gradient(to right, #388e3c, #4caf50);
+}
+
+.control-button {
+  padding: 8px 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #f0f2f5;
+  color: #333;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.control-button:hover {
+  background-color: #e0e0e0;
+  border-color: #999;
+}
+
+.view-button {
+  padding: 8px 14px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background-color: #f5f7fa;
+  color: #333;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+  margin-right: 4px;
+}
+
+.view-button:hover {
+  background-color: #e6eef9;
+  border-color: #999;
+}
+
+.view-button.active {
+  background: linear-gradient(to right, #1976d2, #2196f3);
+  color: white;
+  border: none;
+  font-weight: bold;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+
+/* ============================ */
+/* オートスイッチ（トグル）     */
+/* ============================ */
+
+.auto-move-wrapper {
+  padding: 8px 12px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background-color: #f9fbfc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .auto-move-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
   margin-left: 16px;
-  vertical-align: middle;
+  user-select: none;
+}
+
+.auto-move-toggle input[type="checkbox"] {
+  display: none;
+}
+
+.toggle-switch {
+  width: 44px;
+  height: 24px;
+  background-color: #ccc;
+  border-radius: 12px;
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-switch::before {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  top: 2px;
+  left: 2px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.auto-move-toggle input:checked + .toggle-switch {
+  background-color: #1976d2;
+}
+
+.auto-move-toggle input:checked + .toggle-switch::before {
+  transform: translateX(20px);
+}
+
+.toggle-label {
+  font-size: 14px;
+  color: #333;
+}
+
+/* ============================ */
+/* タスクヘッダー               */
+/* ============================ */
+.task-list-view2 {
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 16px);
+  max-width: unset;               /* max-width 制限を外す */
+  box-sizing: border-box;
+  padding-right: 16px;           /* スクロールバー幅調整 */
+  padding-left: 0;               /* 左余白なしに揃える */
+  margin-bottom: 0px;
+}
+
+.section-drop-list-fixed2 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.task-section-fixed2 {
+  /* background-color: #fff; */
+  padding-left: 12px;
+  padding-right: 12px;
+  /* border-radius: 6px;
+  border: 1px solid #ccc; */
+  transition: box-shadow 0.2s;
+}
+
+.task-header-section-wrapper2 {
+  /* background: white;
   border: 1px solid #ccc;
+  border-radius: 8px; */
+  padding: 6px;
+  transition: border 0.2s, box-shadow 0.2s;
 }
 
-:host ::ng-deep .mat-slide-toggle.auto-move-toggle.mat-checked .mat-slide-toggle-bar {
-  background-color: #1976d2 !important;
-}
-:host ::ng-deep .mat-slide-toggle.auto-move-toggle .mat-slide-toggle-bar {
-  background-color: #ccc !important;
-}
-:host ::ng-deep .mat-slide-toggle.auto-move-toggle.mat-checked .mat-slide-toggle-thumb {
-  background-color: #fff !important;
-}
-:host ::ng-deep .mat-slide-toggle.auto-move-toggle .mat-slide-toggle-thumb {
-  background-color: #eee !important;
-}
-
+/* 固定ヘッダー：stickyをやめて明示的に表示固定にする */
 .task-header.static-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: #f8f9fa;
   padding: 8px 12px;
-  border-bottom: 1px solid #ddd;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  /* border: 1px solid #ccc;
+  border-radius: 6px; */
+  border-bottom: 1px solid #ccc;
   height: 44px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  position: relative; /* sticky無効化して固定 */
+  z-index: 1000;
 }
 
+
 /* ============================ */
-/* セクション表示関連         */
+/* セクション表示               */
 /* ============================ */
 .task-list-view {
   display: flex;
   flex-direction: column;
-  padding: 0;
+  padding: 0 16px 0 0;
   position: relative;
   overflow-y: auto;
-  padding-right: 16px;
 }
 
-.section-drop-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  overflow-y: scroll;
-  flex-grow: 1;
-  max-height: calc(100vh - 200px);
-}
-
+.section-drop-list,
 .section-drop-list-fixed {
   display: flex;
   flex-direction: column;
@@ -138,35 +328,23 @@
   max-height: calc(100vh - 200px);
 }
 
+.task-section,
 .task-section-fixed {
   background-color: #fff;
   padding: 12px;
   border-radius: 6px;
   border: 1px solid #ccc;
   transition: box-shadow 0.2s;
-  margin-right: 16px;
 }
 
+.task-section:hover,
 .task-section-fixed:hover {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   cursor: grab;
 }
 
+.task-section-wrapper,
 .task-header-section-wrapper {
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 6px;
-  transition: border 0.2s, box-shadow 0.2s;
-}
-
-.task-section-wrapper.cdk-drag-preview {
-  border: 2px dashed #1976d2;
-  background-color: #e3f2fd;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.task-section-wrapper {
   background: white;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -187,19 +365,6 @@
   margin: 6px 0;
   border-radius: 6px;
   opacity: 0.6;
-}
-
-.task-section {
-  background-color: #fff;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  transition: box-shadow 0.2s;
-}
-
-.task-section:hover {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  cursor: grab;
 }
 
 .section-header {
@@ -227,61 +392,138 @@
   text-decoration: underline;
 }
 
-.delete-section-button {
-  margin-left: 8px;
-  padding: 2px 6px;
-  font-size: 12px;
+.section-edit-input {
+  padding: 6px 12px;
   border: 1px solid #ccc;
-  border-radius: 4px;
-  background: white;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 200px;
+}
+
+.save-section-button,
+.cancel-section-button {
+  padding: 6px 12px;
+  margin-left: 8px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 14px;
   cursor: pointer;
   transition: background-color 0.2s;
+}
+
+.save-section-button {
+  background-color: #1976d2;
+  color: white;
+}
+
+.save-section-button:hover {
+  background-color: #125aa5;
+}
+
+.cancel-section-button {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.cancel-section-button:hover {
+  background-color: #d0d0d0;
+}
+
+.section-action-button {
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* セクション削除 */
+.delete-section-button {
+
+  background-color: #ffffff;
+  color: #d32f2f;
+  border: 1px solid #d32f2f;
+  margin-left: 8px;
 }
 
 .delete-section-button:hover {
-  background-color: #f0f0f0;
+  background-color: #d32f2f;
+  color: white;
 }
 
-.add-task-button-wrapper {
-  margin-left: auto;
+/* タスク追加（メイン操作） */
+.add-task-button-wrapper button {
+  background-color: #ffffff;
+  color: #1976d2;
+  border: 1px solid #1976d2;
+}
+.add-task-button-wrapper button:hover {
+  background-color: #1976d2;
+  color: white;
 }
 
-.add-task-button-wrapper button,
-.add-task-form button {
-  padding: 4px 10px;
+/* タスクを複製（補助操作） */
+.copy-task-button {
+  background-color: #ffffff;
+  color: #388e3c;
+  border: 1px solid #388e3c;
+  margin-left: 8px;
+}
+.copy-task-button:hover {
+  background-color: #388e3c;
+  color: white;
+}
+
+.add-task-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  background: #f9f9f9;
+  margin-top: 8px;
+}
+
+.add-task-form input[type="text"],
+.add-task-form select,
+.add-task-form input[type="date"] {
+  padding: 6px 12px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background: white;
+  font-size: 14px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.add-task-form button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.add-task-button-wrapper button:hover,
-.add-task-form button:hover {
-  background-color: #f0f0f0;
+.add-task-form button:nth-of-type(1) {
+  background-color: #1976d2;
+  color: white;
 }
 
-.add-task-form {
-  margin: 4px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.add-task-form button:nth-of-type(2) {
+  background-color: transparent;
+  color: #666;
+  border: 1px solid #ccc;
 }
 
-.empty-drop-zone {
-  padding: 20px;
-  border: 2px dashed #ccc;
-  text-align: center;
-  color: #999;
-  font-size: 14px;
-  background-color: #f9f9f9;
-  min-height: 60px;
-}
 
 /* ============================ */
-/* タスクカード表示           */
+/* タスクカード                 */
 /* ============================ */
-
 .task-card {
   display: flex;
   align-items: center;
@@ -328,7 +570,6 @@
   width: 200px;
 }
 
-
 .task-meta-horizontal,
 .task-header-meta {
   display: flex;
@@ -361,17 +602,14 @@
   text-overflow: ellipsis;
 }
 
-.meta-item.assignee { width: 80px; }
-.meta-item.status   { width: 80px; }
 .meta-item.dueDate  { width: 100px; }
 .meta-item.priority { width: 60px; }
 .meta-item.progress { width: 60px; }
 .meta-item.estimate { width: 80px; }
 .meta-item.actual   { width: 80px; }
 
-
 /* ============================ */
-/* タスクパネル               */
+/* タスクパネル・その他         */
 /* ============================ */
 .task-panel-overlay {
   position: fixed;
@@ -411,9 +649,17 @@
   cursor: pointer;
 }
 
-/* ============================ */
-/* その他                       */
-/* ============================ */
+.empty-drop-zone {
+  padding: 20px;
+  border: 2px dashed #ccc;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  background-color: #f9f9f9;
+  min-height: 60px;
+  margin-top: 8px;
+}
+
 ::ng-deep .mat-snack-bar-container.complete-snackbar {
   background-color: #323232 !important;
   color: #ffffff !important;
@@ -425,56 +671,8 @@
   min-width: 240px;
 }
 
-
-/* スライダーのスタイルテスト*/
-
-.auto-move-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  margin-left: 16px;
-  user-select: none;
-}
-
-.auto-move-toggle input[type="checkbox"] {
-  display: none;
-}
-
-.toggle-switch {
-  width: 44px;
-  height: 24px;
-  background-color: #ccc;
-  border-radius: 12px;
-  position: relative;
-  transition: background-color 0.3s ease;
-}
-
-.toggle-switch::before {
-  content: "";
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  top: 2px;
-  left: 2px;
-  background-color: #fff;
-  border-radius: 50%;
-  transition: transform 0.3s ease;
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
-}
-
-/* ON状態のスタイル */
-.auto-move-toggle input:checked + .toggle-switch {
-  background-color: #1976d2;
-}
-
-.auto-move-toggle input:checked + .toggle-switch::before {
-  transform: translateX(20px);
-}
-
-.toggle-label {
-  font-size: 14px;
-  color: #333;
+.section-footer {
+  padding: 12px;
 }
 
 .copy-tasks-dialog-panel .mat-select-panel {
@@ -484,8 +682,4 @@
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 14px;
-}
-
-.section-footer {
-  padding: 12px;
 }

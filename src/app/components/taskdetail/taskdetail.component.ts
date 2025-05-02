@@ -12,6 +12,7 @@ import { CopyTasksDialogComponent } from '../copy-tasks-dialog/copy-tasks-dialog
 import { AuthService } from '../../services/auth.service';
 import { ChangeDetectorRef } from '@angular/core';
 import { SafeDatePipe } from '../../pipes/safe-date.pipe';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-taskdetail',
@@ -94,19 +95,26 @@ export class TaskdetailComponent implements OnInit {
       if (project?.memberIds) {
         this.firestoreService.getUsersByIds(project.memberIds).then(users => {
           this.members = users.map(user => ({ uid: user.uid, displayName: user.displayName }));
-          this.historyUserMap = new Map(users.map(user => [user.uid, user.displayName]));
-
+    
+          this.historyUserMap = new Map<string, string>();
           for (const user of users) {
             this.historyUserMap.set(user.uid, user.displayName);
           }
-  
-          if (currentUserUid && !this.historyUserMap.has(currentUserUid)) {
-            this.historyUserMap.set(currentUserUid, this.currentUserName);
+    
+          const currentUser = this.authService.getCurrentUser();
+          const currentUserUid = currentUser?.uid;
+
+          if (currentUserUid) {
+            this.firestoreService.getUserById(currentUserUid).then(user => {
+              if(user?.displayName) {
+                this.historyUserMap.set(currentUserUid, user.displayName);
+              }
+            });
           }
         });
       }
-    });
-  }  
+    });    
+  }
 
   async saveTask(): Promise<void> {
     if (!this.projectId || !this.task?.id || !this.originalTask) return;

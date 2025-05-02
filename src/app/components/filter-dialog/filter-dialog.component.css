@@ -1,6 +1,129 @@
-.dialog-actions {
-  margin-top: 20px;
+:host {
+  display: block;
+  min-width: 360px;
+  max-width: 600px;
+  padding: 24px;
+  font-family: 'Roboto', sans-serif;
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+/* タイトル */
+.filter-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* トグル行 */
+.filter-toggle {
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.arrow {
+  font-size: 12px;
+  color: #666;
+}
+
+/* セクション全体 */
+.filter-dialog-content {
+  max-height: 50vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 4px;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* チェックボックスオプション */
+.filter-content {
+  padding-top: 4px;
+}
+
+.filter-option {
+  background-color: #fafafa;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.filter-checkbox {
+  display: block;
+}
+
+.filter-checkbox:hover {
+  background-color: #f5f5f5;
+}
+
+/* チェック済みの背景色 */
+.mat-checkbox-checked .mat-checkbox-background {
+  background-color: #1976d2 !important;
+}
+
+/* 読み込み中表示 */
+.filter-loading {
+  font-size: 12px;
+  color: #888;
+  margin-left: 12px;
+  padding-bottom: 8px;
+}
+
+/* ボタン群 */
+.filter-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  margin-top: 24px;
+}
+
+.filter-button {
+  min-width: 88px;
+  padding: 8px 20px;
+  font-weight: 500;
+  border-radius: 6px;
+  text-transform: none;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* キャンセルボタン */
+.cancel-button {
+  background-color: #f2f2f2;
+  color: #555 !important;
+}
+
+.cancel-button:hover {
+  background-color: #e0e0e0;
+}
+
+/* クリアボタン */
+.clear-button {
+  background-color: #f2f2f2;
+  color: #555 !important;
+}
+
+.clear-button:hover {
+  background-color: #e0e0e0;
+}
+
+/* 適用ボタン */
+.apply-button {
+  background: linear-gradient(to right, #1976d2, #2196f3);
+  color: white !important;
+}
+
+.apply-button:hover {
+  background: linear-gradient(to right, #1565c0, #1e88e5);
 }

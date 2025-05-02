@@ -1,0 +1,19 @@
+.member-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  
+  .remove-button {
+    background-color: #e53935;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .remove-button:hover {
+    background-color: #c62828;
+  }
+  

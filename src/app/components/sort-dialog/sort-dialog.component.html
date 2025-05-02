@@ -1,1 +1,38 @@
-<p>sort-dialog works!</p>
+<h2 class="sort-dialog-title" mat-dialog-title>ソート設定</h2>
+
+<div class="bulk-sort-fixed-header">
+    <label class="bulk-sort-label">すべてのセクションに一括でソートを適用</label>
+    <mat-form-field appearance="fill" class="bulk-sort-form-field">
+      <mat-select
+        class="custom-mat-select"
+        [panelClass]="'custom-select-panel'"
+        [(value)]="bulkSort"
+        (selectionChange)="applyBulkSort($event.value)">
+        <mat-option *ngFor="let option of sortOptions" [value]="option.value" class="custom-option">
+          {{ option.label }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>  
+
+<div class="sort-dialog-content" mat-dialog-content>
+  <div *ngFor="let section of sectionOptions" class="section-sort-row">
+    <div class="custom-section-title">{{ section.title }}</div>
+    <mat-form-field appearance="fill" class="section-sort-form-field">
+      <mat-label class="custom-label">ソート方法</mat-label>
+      <mat-select
+        class="custom-mat-select"
+        [panelClass]="'custom-select-panel'"
+        [(value)]="section.selectedSort">
+        <mat-option *ngFor="let option of sortOptions" [value]="option.value" class="custom-option">
+          {{ option.label }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>
+
+<div mat-dialog-actions align="end" class="custom-dialog-actions">
+  <button mat-button class="custom-button cancel-button" (click)="onCancel()">キャンセル</button>
+  <button mat-raised-button color="primary" class="custom-button apply-button" (click)="onSave()">適用</button>
+</div>

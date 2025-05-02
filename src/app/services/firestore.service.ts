@@ -12,9 +12,9 @@ import {
   DocumentReference,
   DocumentData,
   WithFieldValue,
-  docData
+  docData,
+  getDocs
 } from '@angular/fire/firestore';
-
 import { Injectable, inject } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { UpdateData } from '@angular/fire/firestore';
@@ -101,6 +101,7 @@ export class FirestoreService {
       tap(data => console.log('[DEBUG] Firestoreデータ:', data))
     ) as Observable<Task[]>;
   }
+  
 
   getTasksByProjectId(projectId: string): Observable<Task[]> {
     const taskCollection = collection(this.firestore, `projects/${projectId}/tasks`);
@@ -124,10 +125,36 @@ export class FirestoreService {
     return Promise.all(userPromises);
   }
 
-  getUsers(): Observable<{ uid: string, displayName: string }[]> {
-    const usersRef = collection(this.firestore, 'users');
-    return collectionData(usersRef, { idField: 'uid' }) as Observable<{ uid: string, displayName: string }[]>;
+  getUserById(uid: string): Promise<{
+    [x: string]: string; displayName: string 
+} | undefined> {
+    return this.getDocument<{ displayName: string }>(`users/${uid}`);
   }
+
+  async getUsers(): Promise<{ uid: string, displayName: string, email: string }[]> {
+    const usersRef = collection(this.firestore, 'users');
+    const snapshot = await getDocs(usersRef);
+    return snapshot.docs.map(doc => ({
+      uid: doc.id,
+      ...(doc.data() as { displayName: string; email: string })
+    }));
+  }
+  
+
+  // async getUsers(): Promise<{ uid: string, displayName: string, email: string }[]> {
+  //   const usersRef = collection(this.firestore, 'users');
+  //   const snapshot = await getDocs(usersRef);
+  //   return snapshot.docs.map(doc => ({
+  //     uid: doc.id,
+  //     ...(doc.data() as any),
+  //   }));
+  // }
+
+  // getUsers(): Observable<any[]> {
+  //   const usersRef = collection(this.firestore, 'users');
+  //   return collectionData(usersRef, { idField: 'uid' });
+  // }
+  
 
   async updateUserSettings(projectId: string, userId: string, data: any): Promise<void> {
     const ref = doc(this.firestore, `projects/${projectId}/userSettings/${userId}`);
@@ -160,8 +187,12 @@ export class FirestoreService {
       return data?.['memberIds'] ?? [];
     });
   }
-  
 
+  getProjectMembers(projectId: string): Observable<{ uid: string, displayName: string, email: string }[]> {
+    const membersRef = collection(this.firestore, `projects/${projectId}/members`);
+    return collectionData(membersRef, { idField: 'uid' }) as Observable<{ uid: string, displayName: string, email: string }[]>;
+  }
+    
   addSection(projectId: string, section: { title: string; order: number }) {
     const sectionRef = collection(this.firestore, `projects/${projectId}/sections`);
     return addDoc(sectionRef, section);
@@ -205,5 +236,10 @@ export class FirestoreService {
     const settingsRef = doc(this.firestore, `projects/${projectId}/userSettings/${userId}`);
     await setDoc(settingsRef, settings, { merge: true }); // merge:trueで上書きじゃなく追記
   }
+
+  removeMemberFromProject(projectId: string, userId: string): Promise<void> {
+    const memberPath = `projects/${projectId}/members/${userId}`;
+    return this.deleteDocument(memberPath);
+  }  
 
 }

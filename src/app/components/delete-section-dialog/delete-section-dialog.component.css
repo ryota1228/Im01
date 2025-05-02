@@ -1,0 +1,103 @@
+.delete-section-dialog {
+    font-family: "Segoe UI", sans-serif;
+  }
+  
+  /* タイトル */
+  .delete-section-dialog-title {
+    font-size: 18px;
+    font-weight: bold;
+    padding: 24px 24px 0 24px;
+    margin: 0;
+    color: #222;
+  }
+  
+  /* 本文説明 */
+  .delete-section-dialog-description {
+    font-size: 14px;
+    color: #444;
+    margin-bottom: 16px;
+  }
+  
+  /* コンテンツ部分 */
+  .delete-section-dialog-content {
+    padding: 0 24px 8px 24px;
+    min-width: 320px;
+    box-sizing: border-box;
+  }
+  
+  /* ラジオボタン */
+  .delete-section-dialog-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .delete-section-dialog-radio {
+    font-size: 14px;
+    color: #333;
+  }
+  
+  /* セレクトボックス */
+  .delete-section-dialog-select-field {
+    width: 100%;
+  }
+  
+  .delete-section-dialog-select {
+    background-color: #fff !important;
+    border-radius: 6px !important;
+  }
+  
+  .delete-section-dialog-option {
+    background-color: #fff !important;
+    color: #000 !important;
+  }
+  
+  .delete-section-dialog-option:hover {
+    background-color: #f0f0f0 !important;
+  }
+  
+  /* アクションボタン */
+  .delete-section-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px 24px 24px;
+  }
+  
+  /* 共通スタイル */
+  .delete-section-dialog-actions button {
+    min-width: 90px;
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 6px 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none !important;
+    transition: background-color 0.2s, box-shadow 0.2s;
+  }
+  
+  /* キャンセルボタン */
+  .delete-section-dialog-cancel {
+    background-color: #f1f1f1;
+    color: #555;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .delete-section-dialog-cancel:hover {
+    background-color: #e0e0e0;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* 実行ボタン（削除） */
+  .delete-section-dialog-confirm {
+    background-color: #d32f2f;
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .delete-section-dialog-confirm:hover {
+    background-color: #b71c1c;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  

@@ -1,0 +1,59 @@
+.section-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 300px;
+    font-family: 'Roboto', sans-serif;
+  }
+  
+  .section-input {
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  
+  .section-input:focus {
+    border-color: #1976d2;
+  }
+  
+  .section-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  
+  /* 共通ボタン */
+  .custom-button {
+    min-width: 88px;
+    padding: 8px 20px;
+    font-weight: 500;
+    border-radius: 6px;
+    text-transform: none;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  
+  /* キャンセルボタン */
+  .cancel-button {
+    background-color: #f2f2f2;
+    color: #666;
+  }
+  
+  .cancel-button:hover {
+    background-color: #e0e0e0;
+  }
+  
+  /* 保存ボタン */
+  .apply-button {
+    background: linear-gradient(to right, #1976d2, #2196f3);
+    color: white;
+  }
+  
+  .apply-button:hover {
+    background: linear-gradient(to right, #1565c0, #1e88e5);
+  }
+  

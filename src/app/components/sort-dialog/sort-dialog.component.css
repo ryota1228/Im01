@@ -1,0 +1,149 @@
+:host {
+  display: block;
+  min-width: 360px;
+  max-width: 600px;
+  padding: 24px;
+  font-family: 'Roboto', sans-serif;
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.sort-dialog-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+
+.bulk-sort-fixed-header {
+  padding: 0 4px;
+  margin-bottom: 16px;
+}
+
+.sort-dialog-content {
+  max-height: 50vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.bulk-sort-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bulk-sort-form-field {
+  width: 100%;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  padding-left: 0 !important;
+}
+
+.bulk-sort-form-field .mat-form-field-flex {
+  padding-left: 8px;
+}
+
+.bulk-sort-form-field,
+.bulk-sort-form-field .mat-form-field-wrapper {
+  width: 100% !important;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+.section-sort-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #fafafa;
+  gap: 12px;
+}
+
+.custom-section-title {
+  font-weight: 500;
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none !important;
+}
+
+.section-sort-form-field {
+  width: 220px;
+  background-color: #fff;
+}
+
+.custom-mat-select {
+  background-color: #fff !important;
+  color: #000 !important;
+  border-radius: 4px;
+}
+
+.custom-option {
+  background-color: #fff !important;
+  color: #000 !important;
+  border-radius: 4px;
+}
+
+.custom-select-panel {
+  background-color: #fff !important;
+  color: #000 !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+  border-radius: 4px !important;
+}
+
+.custom-select-panel .mat-option {
+  background-color: #fff !important;
+  color: #000 !important;
+}
+
+.custom-select-panel .mat-option:hover {
+  background-color: #f0f0f0 !important;
+}
+
+.custom-select-panel .mat-option.mat-selected {
+  background-color: #e3f2fd !important;
+  font-weight: bold;
+}
+
+
+.custom-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.custom-button {
+  min-width: 88px;
+  padding: 8px 20px;
+  font-weight: 500;
+  border-radius: 6px;
+  text-transform: none;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.cancel-button {
+  background-color: #f2f2f2;
+  color: #555;
+}
+
+.cancel-button:hover {
+  background-color: #e0e0e0;
+}
+
+.apply-button {
+  background: linear-gradient(to right, #1976d2, #2196f3);
+  color: white;
+}
+
+.apply-button:hover {
+  background: linear-gradient(to right, #1565c0, #1e88e5);
+}

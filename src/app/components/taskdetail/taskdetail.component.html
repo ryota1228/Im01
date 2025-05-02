@@ -86,27 +86,6 @@
           {{ isHistoryOpen ? '▲ 更新履歴（クリックで非表示）' : '▼ 更新履歴（クリックで表示）' }}
         </button>
       </div>
-    
-      <!-- <div *ngIf="isHistoryOpen" class="history-content-scrollable">
-        <ng-container *ngFor="let entry of reversedHistory">
-          <ng-container *ngIf="entry.field === 'assignee'; else normalChange">
-          {{ historyUserMap.get(entry.before + '') || entry.before }} →
-          {{ historyUserMap.get(entry.after + '') || entry.after }}
-        </ng-container>
-      </ng-container>
-        <ng-template #normalChange>
-          {{ entry.before }} → {{ entry.after }}
-        </ng-template>
-        <div class="history-meta" *ngIf="entry.changedBy || entry.timestamp">
-          <span *ngIf="entry.changedBy">
-            {{ historyUserMap.get(entry.changedBy + '') || entry.changedBy }} が
-          </span>
-          <span *ngIf="entry.timestamp | safeDate as ts">
-            {{ ts }}
-          </span>
-        </div>
-        
-      </div> -->
 
       <div *ngIf="isHistoryOpen" class="history-content-scrollable">
         <ng-container *ngFor="let entry of reversedHistory">

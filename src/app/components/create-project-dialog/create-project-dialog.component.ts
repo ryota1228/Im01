@@ -27,10 +27,10 @@ export class CreateProjectDialogComponent {
 
   async createProject(): Promise<void> {
     if (!this.projectTitle.trim()) return;
-
+  
     const user = await this.authService.getCurrentUser();
     if (!user) return;
-
+  
     const project = {
       title: this.projectTitle.trim(),
       ownerId: user.uid,
@@ -40,11 +40,21 @@ export class CreateProjectDialogComponent {
         
     const docRef = await addDoc(collection(this.firestore, 'projects'), project);
     const projectId = docRef.id;
-
+  
     await this.firestoreService.initializeDefaultSections(projectId);
 
+    const userDoc = await this.firestoreService.getUserById(user.uid);
+    const displayName = userDoc?.displayName ?? '未登録ユーザー';
+  
+    await this.firestoreService.setDocument(`projects/${projectId}/members/${user.uid}`, {
+      uid: user.uid,
+      displayName,
+      email: user.email ?? ''
+    });
+  
     this.dialogRef.close(projectId);
   }
+  
 
   cancel(): void {
     this.dialogRef.close();

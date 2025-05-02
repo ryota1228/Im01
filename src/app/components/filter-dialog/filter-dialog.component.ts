@@ -1,10 +1,10 @@
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
-import { Component, Inject } from '@angular/core';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { FirestoreService } from '../../services/firestore.service';
 
 @Component({
   selector: 'app-filter-dialog',
@@ -17,32 +17,84 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatButtonModule
   ],
   templateUrl: './filter-dialog.component.html',
-  styleUrl: './filter-dialog.component.css'
+  styleUrls: ['./filter-dialog.component.css']
 })
-export class FilterDialogComponent {
-  allStatuses = ['未着手', '進行中', '確認待ち ', '確認中', '差し戻し', '完了'];
-  allSections: string[] = [];
+export class FilterDialogComponent implements OnInit {
 
-  selectedStatusesMap: { [key: string]: boolean } = {};
-  selectedSectionsMap: { [key: string]: boolean } = {};
+  allStatuses = ['未着手', '進行中', '確認待ち', '確認中', '差し戻し', '完了'];
+  selectedStatusesMap: { [status: string]: boolean } = {};
+
+  allAssignees: string[] = [];
+  selectedAssigneesMap: { [name: string]: boolean } = {};
+
+  allPriorities = ['最優先', '高', '中', '低'];
+  selectedPrioritiesMap: { [priority: string]: boolean } = {};
+
+  isOpen: { status: boolean; assignee: boolean; priority: boolean } = {
+    status: true,
+    assignee: false,
+    priority: false
+  };  
+  
+  toggleSection(section: 'status' | 'assignee' | 'priority'): void {
+    this.isOpen[section] = !this.isOpen[section];
+  }
+
+  
+  
 
   constructor(
     public dialogRef: MatDialogRef<FilterDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { sections: string[]; currentStatuses: string[], currentSections: string[] }
-  ) {
-    this.allSections = data.sections;
+    @Inject(MAT_DIALOG_DATA) public data: {
+      projectId: string,
+      currentStatuses: string[],
+      currentAssignees: string[],
+      currentPriorities: string[]
+    },
+    private firestoreService: FirestoreService
+  ) {}
 
-    data.currentStatuses.forEach(s => this.selectedStatusesMap[s] = true);
-    data.currentSections.forEach(s => this.selectedSectionsMap[s] = true);
-  }
+  ngOnInit(): void {
+    const {
+      currentStatuses = [],
+      currentAssignees = [],
+      currentPriorities = []
+    } = this.data ?? {};
+  
+    currentStatuses.forEach(s => this.selectedStatusesMap[s] = true);
+    currentAssignees.forEach(a => this.selectedAssigneesMap[a] = true);
+    currentPriorities.forEach(p => this.selectedPrioritiesMap[p] = true);
+  
+    this.firestoreService.getProjectMembers(this.data.projectId).subscribe(members => {
+      const names = members
+        .map(m => m.displayName)
+        .filter(name => typeof name === 'string' && name.trim().length > 0);
+  
+      this.allAssignees = names;
+  
+      for (const name of this.allAssignees) {
+        if (this.selectedAssigneesMap[name] === undefined) {
+          this.selectedAssigneesMap[name] = false;
+        }
+      }
+    });
+  }  
+  
 
   applyFilters(): void {
-    const selectedStatuses = Object.keys(this.selectedStatusesMap).filter(k => this.selectedStatusesMap[k]);
-    const selectedSections = Object.keys(this.selectedSectionsMap).filter(k => this.selectedSectionsMap[k]);
-
-    this.dialogRef.close({ selectedStatuses, selectedSections });
+    const selectedStatuses = Object.keys(this.selectedStatusesMap || {}).filter(k => this.selectedStatusesMap[k]);
+    const selectedAssignees = Object.keys(this.selectedAssigneesMap || {}).filter(k => this.selectedAssigneesMap[k]);
+    const selectedPriorities = Object.keys(this.selectedPrioritiesMap || {}).filter(k => this.selectedPrioritiesMap[k]);
+  
+    this.dialogRef.close({ selectedStatuses, selectedAssignees, selectedPriorities });
   }
 
+  onClear(): void {
+    this.selectedStatusesMap = {};
+    this.selectedAssigneesMap = {};
+    this.selectedPrioritiesMap = {};
+  }
+  
   onCancel(): void {
     this.dialogRef.close();
   }
