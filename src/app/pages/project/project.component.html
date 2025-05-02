@@ -1,7 +1,5 @@
 <div class="project-wrapper" style="overflow-y: auto; padding-right: 16px; box-sizing: border-box;">
-
   <div class="project-header" style="position: sticky; top: 0; z-index: 1000; background: #f1f5f9;">
-    <!-- タイトル + 表示切り替え -->
     <div class="header-top-row">
       <input
         [(ngModel)]="projectTitle"
@@ -9,15 +7,17 @@
         class="project-title-input"
         placeholder="プロジェクト名を入力"
       />
-
+  
       <div class="view-switch-group">
         <button class="view-button" [class.active]="currentView === 'list'" (click)="currentView = 'list'">一覧表示</button>
         <button class="view-button" [class.active]="currentView === 'calendar'" (click)="currentView = 'calendar'">カレンダー表示</button>
         <button class="member-button" (click)="openMemberDialog()">メンバー管理</button>
       </div>
     </div>
+  </div> 
+  
 
-    <!-- フィルター操作群 -->
+  <div *ngIf="currentView === 'list'" class="project-header" style="position: sticky; top: 0; z-index: 1000; background: #f1f5f9;">
     <div class="header-control-row">
       <input type="text" [(ngModel)]="searchKeyword" class="search-input" placeholder="タイトル・担当者で検索" />
       <button class="control-button" (click)="sortDialogOpen()">⇅ ソート</button>
@@ -64,33 +64,6 @@
   </div>
 
   <div *ngIf="currentView === 'list'" class="task-list-view" #scrollContainer>
-    <!-- <div class="section-drop-list-fixed">
-      <div class="task-section-fixed">
-        <div class="task-header-section-wrapper">
-          <div class="task-header static-header">
-            <div class="task-content">
-              <div class="task-title">タスク名</div>
-              <div class="task-meta-horizontal">
-                <span class="meta-item assignee">担当者</span>
-                <span class="meta-separator">｜</span>
-                <span class="meta-item dueDate">期限</span>
-                <span class="meta-separator">｜</span>
-                <span class="meta-item status">ステータス</span>
-                <span class="meta-separator">｜</span>
-                <span class="meta-item priority">優先度</span>
-                <span class="meta-separator">｜</span>
-                <span class="meta-item progress">進捗率</span>
-                <span class="meta-separator">｜</span>
-                <span class="meta-item estimate">見積もり</span>
-                <span class="meta-separator">｜</span>
-                <span class="meta-item actual">実績</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div> -->
-
     <div
       cdkDropList
       class="section-drop-list"
@@ -129,10 +102,10 @@
             </div>
 
             <div class="add-task-button-wrapper">
-              <button (click)="startAddTask(entry.section.title)" class="section-action-button">＋ 新規タスク追加</button>
+              <button (click)="startAddTask(entry.section.title)" class="section-action-button" *ngIf="!entry.section.isFixed">＋ 新規タスク追加</button>
             </div>
 
-            <button (click)="copyTasksDialogOpen(entry.section)" class="section-action-button copy-task-button">⧉ セクション内タスクを一括複製</button>
+            <button (click)="copyTasksDialogOpen(entry.section)" class="section-action-button copy-task-button" *ngIf="!entry.section.isFixed">⧉ セクション内タスクを一括複製</button>
 
             <button
                   *ngIf="!entry.section.isFixed"
@@ -228,8 +201,56 @@
     </div>
   </div>
 
+  <div
+  *ngIf="currentView === 'calendar'"
+  class="calendar-header"
+  style="position: sticky; top: 0; z-index: 1000; background: #f1f5f9;"
+>
+
+  <div class="calendar-control-row">
+
+    <div class="calendar-summary-wrapper">
+      <div class="summary-card">
+        <div class="summary-title">{{ currentMonthLabel }}</div>
+        <div class="summary-item">見積: {{ monthlyEstimateTotal }}min</div>
+        <div class="summary-item">実績: {{ monthlyActualTotal }}min</div>
+      </div>
+    
+      <div class="summary-card">
+        <div class="summary-title">プロジェクト全体</div>
+        <div class="summary-item">見積: {{ estimateUntilNow }}min</div>
+        <div class="summary-item">実績: {{ actualUntilNow }}min</div>
+      </div>
+    
+      <div class="summary-card highlight">
+        <div class="summary-title">未完了
+          <span class="info-icon" (click)="toggleTooltip()" (mouseleave)="hideTooltipLater()">
+            ℹ️
+            <span class="tooltip" *ngIf="showTooltip">
+              プロジェクト内のステータスが「完了」ではない全タスクの<br />
+              「（見積もり）×（100 - 進捗率）」の合計です
+            </span>
+          </span>
+        </div>
+                
+        <div class="summary-item">見積: {{ estimateIncompleteTotal }}min</div>
+      </div>
+    </div>
+  </div>
+</div>
+
   <div *ngIf="currentView === 'calendar'">
-    <p>未実装です、、、</p>
+  
+    <app-calendar-view
+    [projectId]="projectId"
+    (monthlyEstimateTotalChange)="onMonthlyEstimateTotalChange($event)"
+    (monthlyActualTotalChange)="onMonthlyActualTotalChange($event)"
+    (estimateUntilNowChange)="onEstimateUntilNowChange($event)"
+    (actualUntilNowChange)="onActualUntilNowChange($event)"
+    (estimateIncompleteTotalChange)="onEstimateIncompleteTotalChange($event)"
+    (currentMonthLabelChange)="onCurrentMonthLabelChange($event)"
+  >
+  </app-calendar-view>
   </div>
 
 </div>

@@ -1,1 +1,26 @@
-<p>calendar-view works!</p>
+   <div class="calendar-view">
+    <div class="calendar-toolbar">
+        <button (click)="prevMonth()">&lt;</button>
+        <span>{{ currentDate | date: 'yyyy年 M月' }}</span>
+        <button (click)="nextMonth()">&gt;</button>
+      </div>
+    <div class="calendar-header">
+        <div *ngFor="let day of ['日','月','火','水','木','金','土']" class="calendar-day-header">
+          {{ day }}
+        </div>
+      </div>
+      
+      <div class="calendar-grid">
+        <div
+          *ngFor="let day of daysInMonth"
+          class="calendar-cell"
+          [ngClass]="{ 'today': formatDate(day) === formatDate(currentDate) }"
+        >
+          <div class="calendar-date">{{ day.getDate() }}</div>
+          <div class="task-badge" *ngFor="let task of getTasksForDate(day)">
+            {{ task.title }}
+          </div>
+        </div>
+      </div>
+  </div>
+  

@@ -22,12 +22,15 @@ import { Task } from '../models/task.model';
 import { taskConverter } from '../models/task.model';
 import { Section } from '../models/section.model';
 import { firstValueFrom } from 'rxjs';
+import { Input } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
 
+  @Input() projectId!: string;
+
   isFixed = true
-  
+
 
   constructor(
     private firestore: Firestore = inject(Firestore)
@@ -101,7 +104,11 @@ export class FirestoreService {
       tap(data => console.log('[DEBUG] Firestoreデータ:', data))
     ) as Observable<Task[]>;
   }
-  
+
+  async getAllTasks(projectId: string): Promise<Task[]> {
+    const snapshot = await getDocs(collection(this.firestore, `projects/${projectId}/tasks`));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+  }
 
   getTasksByProjectId(projectId: string): Observable<Task[]> {
     const taskCollection = collection(this.firestore, `projects/${projectId}/tasks`);

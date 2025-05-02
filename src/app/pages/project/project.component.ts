@@ -25,11 +25,12 @@ import { AuthService } from '../../services/auth.service';
 import { CopyTasksDialogComponent } from '../../components/copy-tasks-dialog/copy-tasks-dialog.component';
 import { InviteMemberDialogComponent } from '../../components/invite-member-dialog/invite-member-dialog.component';
 import { UserRole } from '../../models/user-role.model';
+import { CalendarViewComponent } from '../../components/calendar-view/calendar-view.component';
 
 @Component({
   selector: 'app-project',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, MatDialogModule, MatButtonModule, MatSnackBarModule, MatCheckboxModule, MatSlideToggleModule],
+  imports: [CommonModule, FormsModule, DragDropModule, MatDialogModule, MatButtonModule, MatSnackBarModule, MatCheckboxModule, MatSlideToggleModule, CalendarViewComponent],
   templateUrl: './project.component.html',
   styleUrls: ['./project.component.css'],
   encapsulation: ViewEncapsulation.None
@@ -78,6 +79,36 @@ export class ProjectComponent implements OnInit {
   selectedPriorities: string[] = [];
 
   taskSaveError: string | null = null;
+
+  currentDate = new Date();
+
+  monthlyEstimateTotal: number = 0;
+  monthlyActualTotal: number = 0;
+  estimateUntilNow: number = 0;
+  actualUntilNow: number = 0;
+  estimateIncompleteTotal: number = 0;
+  currentMonthLabel: string = '';
+
+  showTooltip = false;
+  tooltipTimeout: any;
+
+  toggleTooltip(): void {
+    this.showTooltip = !this.showTooltip;
+  }
+  
+  hideTooltipLater(): void {
+    this.tooltipTimeout = setTimeout(() => {
+      this.showTooltip = false;
+    }, 200);
+  }
+
+  generateCalendar(): void {
+
+  }
+
+  emitCurrentMonthLabel(): void {
+
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -192,21 +223,18 @@ export class ProjectComponent implements OnInit {
           filteredTasks = filteredTasks.filter(t => this.selectedStatuses.includes(t.status));
         }
   
-        // 担当者フィルター
         if (this.selectedAssignees?.length > 0) {
           filteredTasks = filteredTasks.filter(t =>
             this.selectedAssignees.includes(this.getAssigneeName(t.assignee))
           );
         }
   
-        // 優先度フィルター
         if (this.selectedPriorities?.length > 0) {
           filteredTasks = filteredTasks.filter(t =>
             this.selectedPriorities.includes(t.priority ?? '')
           );
         }
   
-        // 🔽 2. セクションごとにタスクをグループ化
         const grouped: { [key: string]: Task[] } = {};
         for (const task of filteredTasks) {
           const section = task.section || '未分類';
@@ -214,7 +242,6 @@ export class ProjectComponent implements OnInit {
           grouped[section].push(task);
         }
   
-        // 🔽 3. 表示用のセクションとタスクリスト生成
         this.sectionsWithTasks = this.sectionOrder.map(sec => {
           const isCompleted = sec.isFixed === true;
           if (isCompleted) this.collapsedSections.add(sec.title);
@@ -263,14 +290,12 @@ export class ProjectComponent implements OnInit {
     dialogRef.afterClosed().subscribe(async (title: string | null) => {
       if (!title || !this.projectId) return;
   
-      // 🔁 既存セクションの order をすべて +1 する
       const updatePromises = this.sectionOrder.map((sec, index) => {
         const ref = doc(this.firestore, `projects/${this.projectId}/sections/${sec.id}`);
         return updateDoc(ref, { order: index + 1 });
       });
       await Promise.all(updatePromises);
   
-      // 🆕 新しいセクションを order = 0 で追加
       await this.firestoreService.addSection(this.projectId, {
         title,
         order: 0,
@@ -632,5 +657,46 @@ formatDueDate(dueDate: any): string {
     return this.userRole === 'owner';
   }
   
+  goToPreviousMonth() {
+    this.currentDate = new Date(this.currentDate.setMonth(this.currentDate.getMonth() - 1));
+    this.generateCalendar();
+    this.emitCurrentMonthLabel();
+  }
+  
+  goToNextMonth() {
+    this.currentDate = new Date(this.currentDate.setMonth(this.currentDate.getMonth() + 1));
+    this.generateCalendar();
+    this.emitCurrentMonthLabel();
+  }
+  
+  goToToday() {
+    this.currentDate = new Date();
+    this.generateCalendar();
+    this.emitCurrentMonthLabel();
+  }
+
+  onMonthlyEstimateTotalChange(value: number): void {
+    this.monthlyEstimateTotal = value;
+  }
+  
+  onMonthlyActualTotalChange(value: number): void {
+    this.monthlyActualTotal = value;
+  }
+  
+  onEstimateUntilNowChange(value: number): void {
+    this.estimateUntilNow = value;
+  }
+  
+  onActualUntilNowChange(value: number): void {
+    this.actualUntilNow = value;
+  }
+  
+  onEstimateIncompleteTotalChange(value: number): void {
+    this.estimateIncompleteTotal = value;
+  }
+  
+  onCurrentMonthLabelChange(label: string): void {
+    this.currentMonthLabel = label;
+  }  
   
 }
