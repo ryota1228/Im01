@@ -20,7 +20,7 @@ import { FormsModule } from '@angular/forms';
     MatButtonModule,
     NgFor,
     FormsModule
-  ]
+  ],
 })
 export class CopyTasksDialogComponent {
   selectedSectionId: string | null = null;

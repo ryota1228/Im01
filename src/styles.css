@@ -4,8 +4,6 @@ html, body {
     padding: 0;
     overflow: hidden;
   }
-
-
   
   .task-panel-overlay {
     position: fixed;
@@ -43,15 +41,72 @@ html, body {
     letter-spacing: 0.5px;
   }
 
-  /* .material-icons{
-    vertical-align: middle;
-  } */
-
   .material-icons {
     vertical-align: middle;
     font-size: 24px;
     margin-right: 4px;
   }
 
-  
-  
+.task-panel {
+  width: 400px;
+  height: 100%;
+  background-color: white;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+  padding: 24px;
+  overflow-y: auto;
+  position: relative;
+  animation: slideIn 0.3s ease-in-out;
+  z-index: 5000;
+}
+
+/* ダイアログ全体を最前面に配置 */
+.confirm-delete-dialog-overlay {
+  z-index: 10000 !important;
+}
+
+/* ダイアログの中身をさらに上に */
+.confirm-delete-dialog-overlay .mat-dialog-container {
+  z-index: 10001 !important;
+  position: relative; /* fixed を避けることでMaterialの位置計算と干渉しない */
+}
+
+/* 削除確認ダイアログ用のスタイル */
+.dialog-wrapper {
+  text-align: center;
+  padding: 24px;
+  font-family: 'Roboto', sans-serif;
+}
+
+.dialog-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.dialog-content {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+button {
+  min-width: 80px;
+}
+
+
+.copy-tasks-dialog-overlay .mat-dialog-container {
+  z-index: 10000 !important;
+  position: fixed !important;
+}
+
+.copy-tasks-dialog-overlay .cdk-overlay-backdrop {
+  z-index: 9999 !important;
+}
+
+

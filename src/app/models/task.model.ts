@@ -24,7 +24,26 @@ export interface Task {
   history?: TaskHistoryEntry[];
   order?: number | null;
   completionOrder?: number | null;
+  descriptionDelta?: any;
+  attachments?: Attachment[];
 }
+
+export interface Attachment {
+  name?: string;
+  url?: string;
+  type?: string;
+  uploadedAt?: Date;
+  lastModified?: number;
+  size?: number;
+  webkitRelativePath?: string;
+  arrayBuffer?: () => Promise<ArrayBuffer>;
+  slice?: (start?: number, end?: number, contentType?: string) => Blob;
+  stream?: () => ReadableStream<Uint8Array>;
+  text?: () => Promise<string>;
+};
+
+
+
 
 function convertToDate(ts: any): Date | null {
   if (!ts) return null;

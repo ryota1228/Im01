@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { Task } from '../models/task.model';
+import { UserRole } from '../models/user-role.model';
 
 @Injectable({ providedIn: 'root' })
 export class TaskPanelService {
@@ -11,6 +12,8 @@ export class TaskPanelService {
   private selectedTaskSubject = new BehaviorSubject<Task | null>(null);
   private projectIdSubject = new BehaviorSubject<string | null>(null);
   private isOpenSubject = new BehaviorSubject<boolean>(false);
+  private userRoleSubject = new BehaviorSubject<UserRole>('viewer');
+  userRole$ = this.userRoleSubject.asObservable();
 
   selectedTask$ = this.selectedTaskSubject.asObservable();
   projectId$ = this.projectIdSubject.asObservable();
@@ -27,4 +30,9 @@ export class TaskPanelService {
     this.selectedTaskSubject.next(null);
     this.projectIdSubject.next(null);
   }
+
+  setUserRole(role: UserRole) {
+    this.userRoleSubject.next(role);
+  }
+
 }

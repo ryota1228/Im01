@@ -12,8 +12,8 @@
       <div class="view-switch-group">
         <button class="view-button" [class.active]="currentView === 'list'" (click)="switchView('list')"><span class="material-icons">view_list</span>一覧表示</button>
         <button class="view-button" [class.active]="currentView === 'calendar'" (click)="switchView('calendar')"><span class="material-icons">calendar_today</span>カレンダー表示</button>
-        <button class="member-button" (click)="openMemberDialog()" *ngIf="userRole !== 'viewer'"><span class="material-icons">group</span>メンバー管理</button>
-        <button class="complete-project-button" (click)="completeProject()" *ngIf="userRole === 'owner'"><span class="material-icons">checklist_rtl</span>プロジェクト完了</button>
+        <button class="member-button" (click)="openMemberDialog()" [disabled]="userRole === 'viewer'"><span class="material-icons">group</span>メンバー管理</button>
+        <button class="complete-project-button" (click)="completeProject()" [disabled]="userRole === 'viewer'"><span class="material-icons">checklist_rtl</span>プロジェクト完了</button>
       </div>
     </div>
   </div> 
@@ -24,14 +24,14 @@
       <input type="text" [(ngModel)]="searchKeyword" class="search-input" placeholder="タイトル・担当者で検索" />
       <button class="control-button" (click)="sortDialogOpen()"><span class="material-icons">swap_vert</span>ソート</button>
       <button class="control-button" (click)="filterDialogOpen()"><span class="material-icons">filter_alt</span>フィルター</button>
-      <button class="control-button" (click)="addSectionDialogOpen()" *ngIf="userRole !== 'viewer'"><span class="material-icons">add</span>セクション追加</button>
+      <button class="control-button" (click)="addSectionDialogOpen()" [disabled]="userRole === 'viewer'"><span class="material-icons">add</span>セクション追加</button>
       
 
       <div class="auto-move-wrapper">
         <label class="auto-move-toggle">
-          <input type="checkbox" [(ngModel)]="autoMoveCompletedTasks" (change)="onToggleAutoMoveCompletedTasks()" />
+          <input type="checkbox" [(ngModel)]="autoMoveCompletedTasks" (change)="onToggleAutoMoveCompletedTasks()" [disabled]="userRole === 'viewer'" />
           <span class="toggle-switch"></span>
-          <span class="toggle-label" *ngIf="userRole !== 'viewer'">完了タスクを自動で完了済セクションに移動</span>
+          <span class="toggle-label">完了タスクを自動で完了済セクションに移動</span>
         </label>
       </div>      
     </div>
@@ -72,6 +72,7 @@
       class="section-drop-list"
       [cdkDropListData]="sectionsWithTasks"
       (cdkDropListDropped)="onSectionDrop($event)"
+      [cdkDropListDisabled]="userRole === 'viewer'"
     >
       <div
         *ngFor="let entry of sectionsWithTasks"
@@ -91,7 +92,6 @@
                   (click)="enableSectionEdit(entry.section)"
                   class="section-title"
                   title="クリックで編集"
-                  *ngIf="userRole !== 'viewer'"
                 >
                   {{ entry.section.title }}
                 </h3>
@@ -100,7 +100,7 @@
 
               <ng-container *ngIf="editingSectionId === entry.section.id">
                 <input [(ngModel)]="editingSectionTitle" class="section-edit-input" />
-                <button class="save-section-button" (click)="saveEditedSectionTitle(entry.section, editingSectionTitle)">保存</button>
+                <button class="save-section-button" (click)="saveEditedSectionTitle(entry.section, editingSectionTitle)" [disabled]="userRole === 'viewer'">保存</button>
                 <button class="cancel-section-button" (click)="cancelEditSection()">キャンセル</button>
               </ng-container>
             </div>
@@ -136,7 +136,7 @@
 
           <ng-container *ngIf="!isSectionCollapsed(entry.section.title)">
             <div
-              [cdkDropListDisabled]="entry.section.isFixed === true"
+              [cdkDropListDisabled]="entry.section.isFixed === true || userRole === 'viewer'"
               cdkDropList
               [id]="'dropList-' + entry.section.id"
               [cdkDropListData]="entry.tasks"

@@ -172,6 +172,8 @@ onTaskPanelClosed(updated: boolean): void {
         // 🔽 権限（role）を取得
         const role = await this.firestoreService.getUserRoleInProject(this.projectId!, this.currentUserId);
         this.userRole = role ?? 'viewer'; // 取得できなければ viewer 扱い
+
+        this.taskPanelService.setUserRole(this.userRole);
       }
   
       await this.loadProjectData();

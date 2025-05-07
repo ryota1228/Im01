@@ -1,15 +1,19 @@
 <div class="task-detail-panel" *ngIf="task">
   <button class="back-button" (click)="onClosePanel()">← プロジェクトに戻る</button>
 
+  <div class="validation-error" *ngIf="validationError">
+    {{ validationError }}
+  </div>
+
   <div class="form-scroll-area">
     <div class="form-group">
       <label>タイトル</label>
-      <input [(ngModel)]="task.title" type="text" />
+      <input [(ngModel)]="task.title" type="text" [disabled]="userRole === 'viewer'" [ngClass]="{ 'input-error': !task.title }" />
     </div>
 
     <div class="form-group">
       <label>担当</label>
-      <select [(ngModel)]="task.assignee">
+      <select [(ngModel)]="task.assignee" [disabled]="userRole === 'viewer'">
         <option value="">--未設定--</option>
         <option *ngFor="let member of members" [value]="member.uid">
           {{ member.displayName }}
@@ -19,12 +23,12 @@
 
     <div class="form-group">
       <label>期限</label>
-      <input type="date" [(ngModel)]="dueDateString" (ngModelChange)="onDueDateChange($event)" />
+      <input type="date" [(ngModel)]="dueDateString" (ngModelChange)="onDueDateChange($event)" [disabled]="userRole === 'viewer'" [ngClass]="{ 'input-error': !task.dueDate }" />
     </div>
 
     <div class="form-group">
       <label>優先度</label>
-      <select [(ngModel)]="task.priority">
+      <select [(ngModel)]="task.priority" [disabled]="userRole === 'viewer'">
         <option value="">未設定</option>
         <option value="低">低</option>
         <option value="中">中</option>
@@ -35,7 +39,7 @@
 
     <div class="form-group">
       <label>状態</label>
-      <select [(ngModel)]="task.status">
+      <select [(ngModel)]="task.status" [disabled]="userRole === 'viewer'">
         <option value="未着手">未着手</option>
         <option value="進行中">進行中</option>
         <option value="完了">完了</option>
@@ -46,40 +50,85 @@
     </div>
 
     <div class="form-group">
+      <label>セクション</label>
+      <select [(ngModel)]="task.section" [disabled]="userRole === 'viewer'" [ngClass]="{ 'input-error': !task.section || task.section === '' }">
+        <option *ngFor="let section of sections" [value]="section.title">{{ section.title }}</option>
+      </select>
+    </div>
+
+    <div class="form-group">
       <label>進捗率 (%)</label>
-      <select [(ngModel)]="task.progress">
+      <select [(ngModel)]="task.progress" [disabled]="userRole === 'viewer'">
         <option *ngFor="let p of [0,10,20,30,40,50,60,70,80,90,100]" [value]="p">{{ p }}</option>
       </select>
     </div>
 
     <div class="form-group">
       <label>見積（min）</label>
-      <input type="number" min="0" [(ngModel)]="task.estimate" />
+      <input type="number" min="0" [(ngModel)]="task.estimate" [disabled]="userRole === 'viewer'" />
     </div>
 
     <div class="form-group">
       <label>実績（min）</label>
-      <input type="number" min="0" [(ngModel)]="task.actual" />
+      <input type="number" min="0" [(ngModel)]="task.actual" [disabled]="userRole === 'viewer'" />
     </div>
 
-    <div class="form-group">
-      <label>タスク詳細</label>
-      <textarea [(ngModel)]="task.description" placeholder="タスクの詳細を入力してください"></textarea>
+    <div class="form-group rich-description" [class.focused]="isDescriptionFocused"
+     (focusin)="onDescriptionFocus()" (focusout)="onDescriptionBlur()">
+
+  <label class="form-label description-label">タスク詳細</label>
+
+  <div class="description-wrapper">
+    <div id="task-toolbar" class="quill-toolbar">
+      <span class="ql-formats">
+        <button class="ql-bold" aria-label="太字"></button>
+        <button class="ql-italic" aria-label="斜体"></button>
+        <button class="ql-underline" aria-label="下線"></button>
+
+        <button class="ql-list" value="ordered" aria-label="番号付きリスト"></button>
+        <button class="ql-list" value="bullet" aria-label="箇条書きリスト"></button>
+
+        <select class="ql-header" aria-label="見出し">
+          <option selected></option>
+          <option value="1"></option>
+          <option value="2"></option>
+        </select>
+      </span>
     </div>
+
+    <quill-editor
+    class="description-editor"
+    #quillEditor
+    [formControl]="descriptionControl"
+    [modules]="{ toolbar: '#task-toolbar' }"
+    placeholder="タスクの詳細を入力してください..."></quill-editor>
+  </div>
+</div>
 
     <div class="form-group">
       <label>チャット</label>
-      <textarea [(ngModel)]="task.chat" placeholder="チャットログ"></textarea>
+      <textarea [(ngModel)]="task.chat" placeholder="チャットログ" [disabled]="userRole === 'viewer'"></textarea>
     </div>
 
-    <div class="form-group">
-      <label>セクション</label>
-      <select [(ngModel)]="task.section">
-        <option *ngFor="let section of sections" [value]="section.title">{{ section.title }}</option>
-      </select>
+    <div class="form-group file-list-wrapper">
+      <label>ファイル添付</label>
+      <div class="file-upload-group">
+        <label class="upload-button">
+          ファイル選択
+          <input type="file" multiple (change)="onFileSelected($event)" hidden />
+        </label>
+        <ul class="attached-file-list">
+          <li class="file-item" *ngFor="let file of attachedFiles">
+            <span class="file-icon">📄</span>
+            <span class="file-name" title="{{ file.name }}">{{ file.name }}</span>
+            <button (click)="removeFile(file)" class="delete-btn">削除</button>
+            <button class="file-remove-button" (click)="removeFile(file)">✕</button>
+          </li>
+        </ul>
+      </div>
     </div>
 
-
+    <!-- 更新履歴 -->
     <div class="form-group history-toggle">
       <div class="toggle-row">
         <button class="toggle-button" (click)="toggleHistory()">
@@ -91,16 +140,13 @@
         <ng-container *ngFor="let entry of reversedHistory">
           <div *ngIf="entry.field && (entry.before !== undefined || entry.after !== undefined)" class="history-entry" [hidden]="!entry.before && !entry.after && !entry.changedBy && !entry.timestamp">
             <strong>{{getFieldLabel(entry.field)}}：</strong>
-
             <ng-container *ngIf="entry.field === 'assignee'; else normalChange">
               {{historyUserMap.get(entry.before + '') || entry.before}} →
               {{historyUserMap.get(entry.after + '') || entry.after}}
             </ng-container>
-
             <ng-template #normalChange>
               {{entry.before}} → {{entry.after}}
             </ng-template>
-
             <div class="history-meta" *ngIf="entry.changedBy || entry.timestamp">
               <span *ngIf="entry.changedBy">
                 {{historyUserMap.get(entry.changedBy + '') || entry.changedBy}} が
@@ -112,16 +158,55 @@
           </div>
         </ng-container>
       </div>
+    </div>
+
+    <div class="form-actions" *ngIf="userRole !== 'viewer'">
 
 
+      <button mat-stroked-button color="warn" (click)="confirmDeleteDialog()">
+        <span class="material-icons">delete</span> 削除
+      </button>
 
-    </div>       
-    
-  <div class="form-actions">
-    <button (click)="saveTask()" [disabled]="!task.title || !task.section || !task.dueDate">保存</button>
-    <button (click)="cancelEdit()">キャンセル</button>
-    <button (click)="deleteTask()">削除</button>
-    <button (click)="openDuplicateDialog()">複製</button>
+      <button mat-stroked-button color="basic" (click)="cancelEdit()">
+        <span class="material-icons">undo</span>  戻る
+      </button>
+
+      <button mat-flat-button color="accent" (click)="openDuplicateDialog()">
+        <span class="material-icons">content_copy</span> 複製
+      </button>
+
+      <button mat-flat-button color="primary" (click)="saveTask()">
+        <span class="material-icons">save</span> 保存
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- 削除ダイアログ -->
+<div class="custom-dialog-overlay" *ngIf="isConfirmingDelete">
+  <div class="custom-dialog">
+    <h3 class="dialog-title">「{{ task.title }}」を削除しますか？</h3>
+    <p class="dialog-message">この操作は取り消せません。</p>
+    <div class="dialog-actions">
+      <button class="custom-button cancel-button" (click)="cancelDelete()">キャンセル</button>
+      <button class="custom-button delete-button" (click)="confirmDelete()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 複製ダイアログ -->
+<div class="custom-dialog-overlay" *ngIf="isDuplicatingTask">
+  <div class="custom-dialog">
+    <h3 class="dialog-title">「{{ task.title }}」の複製</h3>
+    <p class="dialog-message">コピー先セクション</p>
+    <select class="dialog-select" [(ngModel)]="selectedCopyTarget">
+      <option *ngFor="let section of sections" [value]="section.id">{{ section.title }}</option>
+    </select>
+    <div class="dialog-actions">
+      <button class="custom-button cancel-button" (click)="cancelDuplicate()">キャンセル</button>
+      <button class="custom-button confirm-button" [disabled]="!selectedCopyTarget" (click)="confirmDuplicate()">複製</button>
+    </div>
   </div>
 </div>
 

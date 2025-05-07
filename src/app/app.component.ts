@@ -7,6 +7,7 @@ import { TaskPanelService } from './services/task-panel.service';
 import { ViewEncapsulation } from '@angular/core';
 import { ViewChild } from '@angular/core';
 import { CalendarViewComponent } from './components/calendar-view/calendar-view.component';
+import { UserRole } from './models/user-role.model';
 
 @Component({
   selector: 'app-root',
@@ -27,6 +28,7 @@ export class AppComponent implements OnInit {
   projectId: string | null = null;
   autoMoveCompletedTasks: boolean = true;
   currentView: 'list' | 'calendar' = 'list';
+  userRole: UserRole = 'viewer';
 
   constructor(private taskPanelService: TaskPanelService) {}
 
@@ -38,7 +40,10 @@ export class AppComponent implements OnInit {
     this.taskPanelService.selectedTask$.subscribe(task => this.selectedTask = task);
     this.taskPanelService.projectId$.subscribe(id => this.projectId = id);
     this.taskPanelService.isOpen$.subscribe(open => this.isTaskPanelOpen = open);
+  
+    this.taskPanelService.userRole$.subscribe(role => this.userRole = role);
   }
+  
 
   openTaskPanel(task: Task, projectId: string, autoMoveCompletedTasks: boolean): void {
     this.selectedTask = task;
@@ -60,8 +65,6 @@ export class AppComponent implements OnInit {
       this.calendarComp?.generateCalendar();
     }
   }
-  
-  
 
   onOverlayClick(): void {
     const detail = document.querySelector('app-taskdetail') as any;
@@ -69,5 +72,5 @@ export class AppComponent implements OnInit {
       detail.onClosePanel();
     }
   }
-  
+
 }

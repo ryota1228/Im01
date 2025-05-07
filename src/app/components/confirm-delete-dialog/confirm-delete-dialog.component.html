@@ -1,0 +1,9 @@
+<div class="dialog-wrapper">
+    <h2 class="dialog-title">「{{ data.task.title }}」を削除しますか？</h2>
+    <p class="dialog-content">この操作は取り消せません。</p>
+    <div class="dialog-actions">
+      <button mat-stroked-button (click)="dialogRef.close(false)">キャンセル</button>
+      <button mat-raised-button color="warn" (click)="dialogRef.close(true)">削除する</button>
+    </div>
+  </div>
+  

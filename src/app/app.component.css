@@ -10,17 +10,6 @@
   justify-content: flex-end;
 }
 
-.task-panel {
-  width: 400px;
-  height: 100%;
-  background-color: white;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
-  padding: 24px;
-  overflow-y: auto;
-  position: relative;
-  animation: slideIn 0.3s ease-in-out;
-}
-
 @keyframes slideIn {
   from {
     transform: translateX(100%);
