@@ -1,0 +1,70 @@
+.dialog-wrapper {
+    padding: 24px !important;
+    width: 320px !important;
+    font-family: 'Roboto', sans-serif !important;
+  }
+  
+  .dialog-title {
+    margin: 0 0 12px !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+  }
+  
+  .dialog-content {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    margin-bottom: 20px !important;
+    color: #333 !important;
+  }
+  
+  .dialog-actions {
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 12px !important;
+  }
+  
+  /* 共通ボタンベース */
+  .cancel-button,
+  .confirm-button {
+    height: 36px !important;
+    padding: 0 16px !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease !important;
+    outline: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* キャンセルボタン */
+  .cancel-button {
+    color: #555 !important;
+    background-color: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+  }
+  
+  .cancel-button:hover {
+    background-color: #e0e0e0 !important;
+  }
+  
+  .cancel-button:focus {
+    box-shadow: 0 0 0 3px rgba(85, 85, 85, 0.3) !important;
+  }
+  
+
+  .confirm-button {
+    background-color: #1976d2 !important;
+    color: white !important;
+    border: none !important;
+  }
+  
+  .confirm-button:hover {
+    background-color: #1565c0 !important;
+  }
+  
+  .confirm-button:focus {
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.4) !important;
+  }  

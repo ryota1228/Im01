@@ -8,7 +8,7 @@
   padding: 0 24px;
   max-width: 1400px;
   margin: 0 auto;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 /* ============================ */
@@ -27,6 +27,41 @@
   border-radius: 6px;
   margin-bottom: 5px;
 }
+
+.calendar-header {
+  width: calc(100% - 30px);
+  padding: 16px 24px 16px 24px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  margin-bottom: 5px;
+  height: calc(100vh - 250px);
+}
+
+.calendar-view-wrapper {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px 0 0;
+  position: relative;
+  overflow-y: auto;
+  height: calc(100vh - 250px); /* 高さは必要に応じて調整 */
+}
+
+
+/* app-calendar-view{
+  width: calc(100% - 30px);
+  padding: 16px 24px 16px 24px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+} */
 
 .header-top-row,
 .header-row {
@@ -253,6 +288,22 @@
   color: #333;
 }
 
+.complete-project-button {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.complete-project-button:hover {
+  background-color: #f1b0b7;
+}
+
+
 /* ============================ */
 /* タスクヘッダー               */
 /* ============================ */
@@ -432,15 +483,27 @@
 
 .section-action-button {
   padding: 4px 10px;
-  font-size: 13px;
   font-weight: 500;
   border-radius: 6px;
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.2s ease;
+  vertical-align: middle;
+  font-size: 13px;
+  display: inline-block;
 }
 
-/* セクション削除 */
+.material-icons{
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  vertical-align: middle;
+  font-size: 24px;
+  display: inline-block;
+  margin-bottom: 2px;
+}
+
+
 .delete-section-button {
 
   background-color: #ffffff;
@@ -454,7 +517,7 @@
   color: white;
 }
 
-/* タスク追加（メイン操作） */
+
 .add-task-button-wrapper button {
   background-color: #ffffff;
   color: #1976d2;
@@ -541,9 +604,9 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
-.status-未着手 { background-color: #f9f9f9 !important; }
-.status-進行中 { background-color: #e3f2fd !important; }
-.status-完了     { background-color: #e8f5e9 !important; }
+.status-未着手 { background-color: #b0c4de !important; }
+.status-進行中 { background-color: #64b5f6 !important; }
+.status-完了     { background-color: #81c784 !important; }
 .status-確認待ち { background-color: #fff3e0 !important; }
 .status-確認中   { background-color: #f3e5f5 !important; }
 .status-差し戻し { background-color: #ffebee !important; }
@@ -744,4 +807,116 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   white-space: nowrap;
   z-index: 999;
+}
+
+.calendar-control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.calendar-month-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.current-month-label {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+}
+
+.calendar-month-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.month-switch-buttons button {
+  background-color: #e0e0e0;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.month-switch-buttons button:hover {
+  background-color: #ccc;
+}
+
+
+.month-switch-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+.month-nav-button,
+.month-today-button {
+  padding: 6px 14px;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  background-color: #f0f0f0;
+  color: #333;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+
+.month-nav-button:hover,
+.month-today-button:hover {
+  background-color: #ccc;
+}
+
+
+.month-today-button {
+  font-weight: bold;
+  background-color: #fff;
+  color: #1976d2;
+  border: 1px solid #1976d2;
+}
+
+.month-today-button:hover {
+  background-color: #e3f2fd;
+}
+
+.month-today-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(to right, #1976d2, #2196f3);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.month-today-button:hover {
+  background: linear-gradient(to right, #125aa5, #1976d2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+
+/* summaryカードの余白調整 */
+.calendar-summary-wrapper {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.view-button,
+.member-button,
+.complete-project-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }

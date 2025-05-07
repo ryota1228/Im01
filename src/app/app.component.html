@@ -10,7 +10,7 @@
         [projectId]="projectId!"
         [autoMoveCompletedTasks]="autoMoveCompletedTasks"
         (click)="$event.stopPropagation()"
-        (closed)="onTaskPanelClosed()"
+        (closed)="onTaskPanelClosed($event)"
       >
       </app-taskdetail>
     </div>

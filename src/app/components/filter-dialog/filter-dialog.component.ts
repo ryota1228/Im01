@@ -29,14 +29,19 @@ export class FilterDialogComponent implements OnInit {
 
   allPriorities = ['最優先', '高', '中', '低'];
   selectedPrioritiesMap: { [priority: string]: boolean } = {};
+  
+  estimateLessThanActualOnly: boolean = false;
+  overdueOnly: boolean = false;
 
-  isOpen: { status: boolean; assignee: boolean; priority: boolean } = {
-    status: true,
+
+  isOpen: { status: boolean; assignee: boolean; priority: boolean; extra: boolean } = {
+    status: false,
     assignee: false,
-    priority: false
+    priority: false,
+    extra: true,
   };  
   
-  toggleSection(section: 'status' | 'assignee' | 'priority'): void {
+  toggleSection(section: 'status' | 'assignee' | 'priority' | 'extra'): void {
     this.isOpen[section] = !this.isOpen[section];
   }
 
@@ -49,7 +54,9 @@ export class FilterDialogComponent implements OnInit {
       projectId: string,
       currentStatuses: string[],
       currentAssignees: string[],
-      currentPriorities: string[]
+      currentPriorities: string[],
+      estimateLessThanActualOnly: boolean,
+      overdueOnly: boolean
     },
     private firestoreService: FirestoreService
   ) {}
@@ -58,12 +65,17 @@ export class FilterDialogComponent implements OnInit {
     const {
       currentStatuses = [],
       currentAssignees = [],
-      currentPriorities = []
+      currentPriorities = [],
+      estimateLessThanActualOnly = false,
+      overdueOnly = false 
     } = this.data ?? {};
   
     currentStatuses.forEach(s => this.selectedStatusesMap[s] = true);
     currentAssignees.forEach(a => this.selectedAssigneesMap[a] = true);
     currentPriorities.forEach(p => this.selectedPrioritiesMap[p] = true);
+  
+    this.estimateLessThanActualOnly = estimateLessThanActualOnly;
+    this.overdueOnly = overdueOnly;
   
     this.firestoreService.getProjectMembers(this.data.projectId).subscribe(members => {
       const names = members
@@ -80,14 +92,22 @@ export class FilterDialogComponent implements OnInit {
     });
   }  
   
-
   applyFilters(): void {
     const selectedStatuses = Object.keys(this.selectedStatusesMap || {}).filter(k => this.selectedStatusesMap[k]);
     const selectedAssignees = Object.keys(this.selectedAssigneesMap || {}).filter(k => this.selectedAssigneesMap[k]);
     const selectedPriorities = Object.keys(this.selectedPrioritiesMap || {}).filter(k => this.selectedPrioritiesMap[k]);
   
-    this.dialogRef.close({ selectedStatuses, selectedAssignees, selectedPriorities });
-  }
+    const estimateLessThanActualOnly = this.estimateLessThanActualOnly;
+    const overdueOnly = this.overdueOnly;
+  
+    this.dialogRef.close({
+      selectedStatuses,
+      selectedAssignees,
+      selectedPriorities,
+      estimateLessThanActualOnly,
+      overdueOnly,
+    });
+  }  
 
   onClear(): void {
     this.selectedStatusesMap = {};

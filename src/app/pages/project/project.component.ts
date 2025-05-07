@@ -1,6 +1,5 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Firestore, doc, getDoc, updateDoc, setDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore';
 import { Task } from '../../models/task.model';
 import { Section } from '../../models/section.model';
 import { FirestoreService } from '../../services/firestore.service';
@@ -26,6 +25,10 @@ import { CopyTasksDialogComponent } from '../../components/copy-tasks-dialog/cop
 import { InviteMemberDialogComponent } from '../../components/invite-member-dialog/invite-member-dialog.component';
 import { UserRole } from '../../models/user-role.model';
 import { CalendarViewComponent } from '../../components/calendar-view/calendar-view.component';
+import { ViewChild } from '@angular/core';
+import { subMonths, addMonths } from 'date-fns';
+import { Router, ActivatedRoute } from '@angular/router';
+import { ConfirmCompleteDialogComponent } from '../../components/confirm-complete-dialog/confirm-complete-dialog.component';
 
 @Component({
   selector: 'app-project',
@@ -61,7 +64,7 @@ export class ProjectComponent implements OnInit {
   addingNewSection: boolean = false;
   newSectionTitle: string = '';
 
-  userRole: UserRole = 'viewer';
+  userRole: 'owner' | 'editor' | 'viewer' = 'viewer';
 
   readonly COMPLETED_SECTION_TITLE = '完了済';
 
@@ -92,6 +95,33 @@ export class ProjectComponent implements OnInit {
   showTooltip = false;
   tooltipTimeout: any;
 
+  isTaskPanelOpen: boolean = false;
+
+  estimateLessThanActualOnly: boolean = false;
+  overdueOnly: boolean = false;
+
+  monthlyCompletionRate: number = 0;
+  totalCompletionRate: number = 0;
+  actualIncompleteTotal: number = 0;
+  showCalendar = true;
+
+
+  @ViewChild(CalendarViewComponent) calendarComp?: CalendarViewComponent;
+  
+
+
+onTaskPanelClosed(updated: boolean): void {
+  this.isTaskPanelOpen = false;
+  if (updated) {
+    this.calendarComp?.generateCalendar();
+  }
+}
+
+
+  onMonthlyCompletionRateChange(rate: number): void {
+    this.monthlyCompletionRate = rate;
+  }
+
   toggleTooltip(): void {
     this.showTooltip = !this.showTooltip;
   }
@@ -106,10 +136,6 @@ export class ProjectComponent implements OnInit {
 
   }
 
-  emitCurrentMonthLabel(): void {
-
-  }
-
   constructor(
     private route: ActivatedRoute,
     private firestoreService: FirestoreService,
@@ -119,25 +145,42 @@ export class ProjectComponent implements OnInit {
     private snackBar: MatSnackBar,
     private appComponent: AppComponent,
     private authService: AuthService,
+    private router: Router,
   ) {}
 
+  @ViewChild(CalendarViewComponent) calendarComponentRef!: CalendarViewComponent;
+
   async ngOnInit(): Promise<void> {
+    // クエリパラメータからビュー（list/calendar）を取得
+    this.route.queryParamMap.subscribe(params => {
+      const view = params.get('view');
+      this.currentView = view === 'calendar' ? 'calendar' : 'list';
+    });
+  
+    // パスパラメータから projectId を取得し、ユーザー情報とデータをロード
     this.route.paramMap.subscribe(async params => {
       const id = params.get('id') ?? '';
       if (id) {
         this.projectId = id;
       }
+  
       const user = await this.authService.getCurrentUser();
       if (user) {
         this.currentUserId = user.uid;
         await this.loadUserSettings();
+  
+        // 🔽 権限（role）を取得
+        const role = await this.firestoreService.getUserRoleInProject(this.projectId!, this.currentUserId);
+        this.userRole = role ?? 'viewer'; // 取得できなければ viewer 扱い
       }
   
       await this.loadProjectData();
       this.loadProjectTitle(this.projectId!);
       this.loadSectionsAndTasks(this.projectId!);
+      this.emitCurrentMonthLabel();
     });
   }
+  
 
   openMemberDialog(): void {
     const dialogRef = this.dialog.open(InviteMemberDialogComponent, {
@@ -214,11 +257,11 @@ export class ProjectComponent implements OnInit {
             task.dueDate = (task.dueDate as Timestamp).toDate();
           }
         });
+
+        this.calculateCalendarSummary(tasks, this.currentDate);
   
-        // 🔽 1. フィルター適用
         let filteredTasks = [...tasks];
   
-        // ステータスフィルター
         if (this.selectedStatuses.length > 0 && !this.selectedStatuses.includes('すべて')) {
           filteredTasks = filteredTasks.filter(t => this.selectedStatuses.includes(t.status));
         }
@@ -234,7 +277,20 @@ export class ProjectComponent implements OnInit {
             this.selectedPriorities.includes(t.priority ?? '')
           );
         }
-  
+
+        if (this.estimateLessThanActualOnly) {
+          filteredTasks = filteredTasks.filter(t =>
+            t.estimate != null && t.actual != null && t.estimate < t.actual
+          );
+        }
+
+        if (this.overdueOnly) {
+          const now = new Date().setHours(0, 0, 0, 0);
+          filteredTasks = filteredTasks.filter(t =>
+            t.dueDate && new Date(t.dueDate).getTime() < now && t.status !== '完了'
+          );
+        }
+        
         const grouped: { [key: string]: Task[] } = {};
         for (const task of filteredTasks) {
           const section = task.section || '未分類';
@@ -248,7 +304,6 @@ export class ProjectComponent implements OnInit {
   
           let tasks = grouped[sec.title] || [];
   
-          // ソート処理
           switch (sec.selectedSort) {
             case 'dueDate':
               tasks = tasks.sort((a, b) =>
@@ -484,6 +539,8 @@ export class ProjectComponent implements OnInit {
         currentStatuses: this.selectedStatuses.includes('すべて') ? [] : this.selectedStatuses,
         currentAssignees: this.selectedAssignees,
         currentPriorities: this.selectedPriorities,
+        estimateLessThanActualOnly: this.estimateLessThanActualOnly,
+        overdueOnly: this.overdueOnly
       }
     });
   
@@ -492,11 +549,12 @@ export class ProjectComponent implements OnInit {
         this.selectedStatuses = result.selectedStatuses?.length > 0 ? result.selectedStatuses : ['すべて'];
         this.selectedAssignees = result.selectedAssignees || [];
         this.selectedPriorities = result.selectedPriorities || [];
+        this.estimateLessThanActualOnly = result.estimateLessThanActualOnly || false;
+        this.overdueOnly = result.overdueOnly || false;
         this.loadSectionsAndTasks(this.projectId!);
       }
     });
   }
-  
   
 
   sortDialogOpen(): void {
@@ -656,24 +714,51 @@ formatDueDate(dueDate: any): string {
   get isOwner(): boolean {
     return this.userRole === 'owner';
   }
-  
+
   goToPreviousMonth() {
-    this.currentDate = new Date(this.currentDate.setMonth(this.currentDate.getMonth() - 1));
-    this.generateCalendar();
-    this.emitCurrentMonthLabel();
+    this.currentDate = subMonths(this.currentDate, 1);
+    this.calendarComp?.generateCalendar();
+    this.refreshCalendarComponent();
   }
   
   goToNextMonth() {
-    this.currentDate = new Date(this.currentDate.setMonth(this.currentDate.getMonth() + 1));
-    this.generateCalendar();
-    this.emitCurrentMonthLabel();
+    this.currentDate = addMonths(this.currentDate, 1);
+    this.calendarComp?.generateCalendar();
+    this.refreshCalendarComponent();
   }
   
   goToToday() {
     this.currentDate = new Date();
-    this.generateCalendar();
-    this.emitCurrentMonthLabel();
+    this.calendarComp?.generateCalendar();
+    this.refreshCalendarComponent();
   }
+  
+  refreshCalendarComponent() {
+    this.showCalendar = false;
+    setTimeout(() => this.showCalendar = true, 0);
+  }
+  
+
+  loadCalendarSummary(): void {
+    if (!this.projectId) return;
+  
+    this.firestoreService.getTasksByProjectId(this.projectId).subscribe(tasks => {
+      tasks.forEach(task => {
+        if (task.dueDate && (task.dueDate as any).toDate) {
+          task.dueDate = (task.dueDate as Timestamp).toDate();
+        }
+      });
+  
+      this.calculateCalendarSummary(tasks, this.currentDate);
+    });
+  }  
+
+  emitCurrentMonthLabel(): void {
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth() + 1;
+    this.currentMonthLabel = `${year}年${month}月`;
+  }
+  
 
   onMonthlyEstimateTotalChange(value: number): void {
     this.monthlyEstimateTotal = value;
@@ -697,6 +782,86 @@ formatDueDate(dueDate: any): string {
   
   onCurrentMonthLabelChange(label: string): void {
     this.currentMonthLabel = label;
-  }  
+  }
+
+  calculateCalendarSummary(tasks: Task[], currentDate: Date): void {
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+  
+    const isSameMonth = (date?: Date) => {
+      if (!date) return false;
+      return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
+    };
+  
+    let estimateMonthly = 0;
+    let actualMonthly = 0;
+    let completedMonthly = 0;
+    let totalMonthly = 0;
+  
+    let estimateAll = 0;
+    let actualAll = 0;
+    let completedAll = 0;
+    let totalAll = 0;
+  
+    let estimateIncomplete = 0;
+    let actualIncomplete = 0;
+  
+    for (const task of tasks) {
+      const due = task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate);
+  
+      // 全体
+      estimateAll += task.estimate || 0;
+      actualAll += task.actual || 0;
+      totalAll += 1;
+      if (task.status === '完了') completedAll += 1;
+  
+      // 月単位（今月）
+      if (isSameMonth(due)) {
+        estimateMonthly += task.estimate || 0;
+        actualMonthly += task.actual || 0;
+        totalMonthly += 1;
+        if (task.status === '完了') completedMonthly += 1;
+      }
+  
+      if (task.status !== '完了') {
+        estimateIncomplete += task.estimate || 0;
+        actualIncomplete += task.actual || 0;
+      }
+    }
+  
+    this.monthlyEstimateTotal = estimateMonthly;
+    this.monthlyActualTotal = actualMonthly;
+    this.monthlyCompletionRate = totalMonthly > 0 ? Math.round((completedMonthly / totalMonthly) * 100) : 0;
+  
+    this.estimateUntilNow = estimateAll;
+    this.actualUntilNow = actualAll;
+    this.totalCompletionRate = totalAll > 0 ? Math.round((completedAll / totalAll) * 100) : 0;
+  
+    this.estimateIncompleteTotal = estimateIncomplete;
+    this.actualIncompleteTotal = actualIncomplete;
+  }
+
+  switchView(view: 'list' | 'calendar'): void {
+    this.currentView = view;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { view },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  async completeProject() {
+    const dialogRef = this.dialog.open(ConfirmCompleteDialogComponent);
+    const result = await dialogRef.afterClosed().toPromise();
+  
+    if (result === true && this.projectId) {
+      try {
+        await this.firestoreService.markProjectAsCompleted(this.projectId);
+        this.router.navigate(['']);
+      } catch (error) {
+        console.error('プロジェクト完了に失敗しました:', error);
+      }
+    }
+  }
   
 }

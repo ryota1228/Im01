@@ -12,7 +12,10 @@ import { CopyTasksDialogComponent } from '../copy-tasks-dialog/copy-tasks-dialog
 import { AuthService } from '../../services/auth.service';
 import { ChangeDetectorRef } from '@angular/core';
 import { SafeDatePipe } from '../../pipes/safe-date.pipe';
-import { UserService } from '../../services/user.service';
+import { CalendarSyncService } from '../calendar-view/calendar-view.component';
+import { addDoc, collection } from 'firebase/firestore';
+import cloneDeep from 'lodash/cloneDeep';
+
 
 @Component({
   selector: 'app-taskdetail',
@@ -26,7 +29,7 @@ export class TaskdetailComponent implements OnInit {
   @Input() task!: Task;
   @Input() projectId!: string;
   @Input() autoMoveCompletedTasks: boolean = true;
-  @Output() closed = new EventEmitter<void>();
+  @Output() closed = new EventEmitter<boolean>();
 
   sections: Section[] = [];
   members: { uid: string, displayName: string }[] = [];
@@ -49,7 +52,8 @@ export class TaskdetailComponent implements OnInit {
     private firestoreService: FirestoreService,
     private dialog: MatDialog,
     private authService: AuthService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private calendarSyncService: CalendarSyncService
   ) {}
 
   get dueDateString(): string {
@@ -58,7 +62,8 @@ export class TaskdetailComponent implements OnInit {
       ? this.task.dueDate.toISOString().substring(0, 10)
       : new Date(this.task.dueDate).toISOString().substring(0, 10);
   }
-
+  
+  
   getDisplayName(uid: string): string {
     const user = this.members.find(m => m.uid === uid);
     return user?.displayName || uid;
@@ -117,10 +122,36 @@ export class TaskdetailComponent implements OnInit {
   }
 
   async saveTask(): Promise<void> {
-    if (!this.projectId || !this.task?.id || !this.originalTask) return;
-
+    if (!this.projectId || !this.task) return;
+  
+    const isNewTask = !this.task.id;
+  
+    if (isNewTask) {
+      const ref = await addDoc(
+        collection(this.firestore, `projects/${this.projectId}/tasks`),
+        {
+          title: this.task.title ?? '',
+          assignee: this.task.assignee ?? '',
+          dueDate: this.task.dueDate ?? null,
+          status: this.task.status ?? '',
+          section: this.task.section ?? '',
+          order: this.task.order ?? null,
+          priority: this.task.priority ?? '',
+          progress: this.task.progress ?? 0,
+          estimate: this.task.estimate ?? null,
+          actual: this.task.actual ?? null,
+          description: this.task.description ?? '',
+          chat: this.task.chat ?? '',
+          history: [],
+        }
+      );
+      this.closed.emit();
+      return;
+    }
+  
+    if (!this.originalTask) return;
+  
     const ref = doc(this.firestore, `projects/${this.projectId}/tasks/${this.task.id}`);
-
     const updatedTask: any = {
       title: this.task.title ?? '',
       assignee: this.task.assignee ?? '',
@@ -136,10 +167,10 @@ export class TaskdetailComponent implements OnInit {
       chat: this.task.chat ?? '',
       history: Array.isArray(this.task.history) ? this.task.history : [],
     };
-
+  
     const historyEntries = this.generateHistoryEntries(this.originalTask, updatedTask);
     updatedTask.history.push(...historyEntries);
-
+  
     if (updatedTask.status === '完了' && this.autoMoveCompletedTasks === true) {
       updatedTask.section = '完了済';
       this.snackBar.open('✔ タスクを完了済セクションに移動しました', '', {
@@ -149,10 +180,10 @@ export class TaskdetailComponent implements OnInit {
         panelClass: ['complete-snackbar']
       });
     }
-
+  
     try {
       await setDoc(ref, updatedTask);
-      this.closed.emit();
+      this.closed.emit(true);
     } catch (error) {
       console.error('[Taskdetail] Task update failed:', error);
       this.snackBar.open('タスクの更新に失敗しました', '', {
@@ -163,6 +194,7 @@ export class TaskdetailComponent implements OnInit {
       });
     }
   }
+  
 
   private generateHistoryEntries(before: Task, after: Partial<Task>): TaskHistoryEntry[] {
     const timestamp = new Date();
@@ -288,5 +320,13 @@ export class TaskdetailComponent implements OnInit {
 
   get reversedHistory() {
     return this.task?.history ? [...this.task.history].map(h => ({ ...h })).reverse() : [];
-  }  
+  } 
+
+  cancelEdit(): void {
+    if (this.originalTask) {
+      this.task = cloneDeep(this.originalTask);
+    }
+    this.closed.emit(false);
+  }
+  
 }

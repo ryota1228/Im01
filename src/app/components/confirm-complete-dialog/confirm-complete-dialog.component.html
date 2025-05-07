@@ -1,0 +1,13 @@
+<div class="dialog-wrapper">
+    <h2 class="dialog-title">プロジェクト完了確認</h2>
+  
+    <div class="dialog-content">
+      このプロジェクトを完了してもよろしいですか？<br />
+      完了後は編集できません。
+    </div>
+  
+    <div class="dialog-actions">
+      <button class="cancel-button" mat-button (click)="dialogRef.close(false)">キャンセル</button>
+      <button class="confirm-button" mat-raised-button color="primary" (click)="dialogRef.close(true)">完了する</button>
+    </div>
+  </div>  

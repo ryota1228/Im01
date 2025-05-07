@@ -6,6 +6,7 @@ import { TaskdetailComponent } from './components/taskdetail/taskdetail.componen
 import { TaskPanelService } from './services/task-panel.service';
 import { ViewEncapsulation } from '@angular/core';
 import { ViewChild } from '@angular/core';
+import { CalendarViewComponent } from './components/calendar-view/calendar-view.component';
 
 @Component({
   selector: 'app-root',
@@ -25,10 +26,13 @@ export class AppComponent implements OnInit {
   isTaskPanelOpen = false;
   projectId: string | null = null;
   autoMoveCompletedTasks: boolean = true;
+  currentView: 'list' | 'calendar' = 'list';
 
   constructor(private taskPanelService: TaskPanelService) {}
 
   @ViewChild('taskDetailComponent') taskDetailComp?: TaskdetailComponent;
+  @ViewChild(CalendarViewComponent) calendarComp?: CalendarViewComponent;
+
 
   ngOnInit(): void {
     this.taskPanelService.selectedTask$.subscribe(task => this.selectedTask = task);
@@ -43,18 +47,21 @@ export class AppComponent implements OnInit {
     this.isTaskPanelOpen = true;
   }
 
-  async closePanel(): Promise<void> {
-    if (this.taskDetailComp) {
+  async closePanel(save: boolean = true): Promise<void> {
+    if (save && this.taskDetailComp) {
       await this.taskDetailComp.saveTask();
     }
-    this.onTaskPanelClosed();
-  }
+    this.onTaskPanelClosed(save);
+  }  
 
-  onTaskPanelClosed(): void {
+  onTaskPanelClosed(updated: boolean): void {
     this.isTaskPanelOpen = false;
-    this.selectedTask = null;
-    this.projectId = null;
+    if (this.currentView === 'calendar') {
+      this.calendarComp?.generateCalendar();
+    }
   }
+  
+  
 
   onOverlayClick(): void {
     const detail = document.querySelector('app-taskdetail') as any;

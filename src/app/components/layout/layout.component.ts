@@ -10,12 +10,15 @@ import { LogoutDialogComponent } from '../logout-dialog/logout-dialog.component'
 import { Task } from '../../models/task.model';
 import { TaskPanelService } from '../../services/task-panel.service';
 import { CreateProjectDialogComponent } from '../create-project-dialog/create-project-dialog.component';
-
+import { MatIconModule } from '@angular/material/icon';
+import { FirestoreService } from '../../services/firestore.service';
+import { Project } from '../../models/project.model';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, MatDialogModule, MatButtonModule],
+  imports: [RouterOutlet, CommonModule, MatDialogModule, MatButtonModule, MatIconModule, RouterModule],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.css']
 })
@@ -26,25 +29,46 @@ export class LayoutComponent {
   isTaskPanelOpen = false;
   projectId: string | null = null;
   joinedProjects: any;
+  displayName: string = '';
+  projects: Project[] = [];
+  isProjectListOpen = false;
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private dialog: MatDialog,
-    private taskPanelService: TaskPanelService
+    private taskPanelService: TaskPanelService,
+    private firestoreService: FirestoreService
   )
   {
     this.user$ = this.authService.currentUser$;
   }
 
-  ngOnInit() {
+  async ngOnInit(): Promise<void> {
     this.taskPanelService.selectedTask$.subscribe(task => this.selectedTask = task);
     this.taskPanelService.projectId$.subscribe(id => this.projectId = id);
     this.taskPanelService.isOpen$.subscribe(open => this.isTaskPanelOpen = open);
-  }
+  
+    this.authService.currentUser$.subscribe(async user => {
+      if (user?.uid) {
+        const data = await this.firestoreService.getUserById(user.uid);
+        this.displayName = data?.displayName ?? '';
+
+        this.firestoreService.getProjectsByUser(user.uid).subscribe(projects => {
+          const filtered = projects.filter(p => p.status !== 'completed');
+          console.log('表示対象のプロジェクト:', filtered);
+          this.joinedProjects = filtered;
+        });        
+      }
+    });
+  }  
 
   toggleSidebar() {
     this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  toggleProjectList() {
+    this.isProjectListOpen = !this.isProjectListOpen;
   }
 
   logout() {
@@ -86,7 +110,6 @@ openCreateProjectDialog(): void {
     }
   });
 }
-
   
 }
 

@@ -8,7 +8,6 @@ import { ProjectComponent } from './pages/project/project.component';
 export const routes: Routes = [
   {
     path: '',
-    // loadComponent: () => import('./components/layout/layout.component').then(m => m.LayoutComponent),
     component: LayoutComponent,
     children: [
       { path: '', canActivate: [authGuard], loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent) },
@@ -21,15 +20,3 @@ export const routes: Routes = [
   { path: 'register', canActivate: [loggedInGuard], loadComponent: () => import('./pages/register/register.component').then(m => m.RegisterComponent) },
   { path: 'passwordreset', canActivate: [loggedInGuard], loadComponent: () => import('./pages/passwordreset/passwordreset.component').then(m => m.PasswordresetComponent) },
 ];
-
-// export const routes: Routes = [
-//   {
-//     path: '',component: LayoutComponent,
-//     children: [
-//       { path: '', component: HomeComponent, canActivate: [authGuard] } ] },
-//       { path: 'projects', component: ProjectsComponent, canActivate: [authGuard] },
-//       { path: 'teams', component: TeamsComponent, canActivate: [authGuard] },
-//       { path: 'login', component: LoginComponent, canActivate: [loggedInGuard] },
-//       { path: 'register', component: RegisterComponent, canActivate: [loggedInGuard] },
-//       { path: 'passwordreset', component: PasswordresetComponent, canActivate: [loggedInGuard] },
-// ];

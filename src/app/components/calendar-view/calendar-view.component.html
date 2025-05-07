@@ -1,26 +1,41 @@
-   <div class="calendar-view">
-    <div class="calendar-toolbar">
-        <button (click)="prevMonth()">&lt;</button>
-        <span>{{ currentDate | date: 'yyyy年 M月' }}</span>
-        <button (click)="nextMonth()">&gt;</button>
+<div class="calendar-view-wrapper">
+    <div class="calendar-grid">
+      <div class="calendar-header-cell" *ngFor="let day of daysInMonth | slice:0:7">
+        {{ day | date:'EEE' }}
       </div>
-    <div class="calendar-header">
-        <div *ngFor="let day of ['日','月','火','水','木','金','土']" class="calendar-day-header">
-          {{ day }}
-        </div>
+  
+      <div
+      class="calendar-cell"
+      *ngFor="let day of daysInMonth"
+      [id]="'dropList-' + (day | date:'yyyy-MM-dd')"
+      cdkDropList
+      [cdkDropListData]="getTasksForDate(day)"
+      [cdkDropListConnectedTo]="dropListIds"
+      (cdkDropListDropped)="onTaskDrop($event, day)"
+>
+
+
+      <div class="calendar-date">
+        {{ day | date:'d' }}
+        <button
+          class="add-task-button"
+          (click)="$event.stopPropagation(); openNewTask(day)"
+        >＋</button>
       </div>
-      
-      <div class="calendar-grid">
-        <div
-          *ngFor="let day of daysInMonth"
-          class="calendar-cell"
-          [ngClass]="{ 'today': formatDate(day) === formatDate(currentDate) }"
-        >
-          <div class="calendar-date">{{ day.getDate() }}</div>
-          <div class="task-badge" *ngFor="let task of getTasksForDate(day)">
+  
+        <div class="calendar-tasks">
+          <div
+            *ngFor="let task of getTasksForDate(day)"
+            class="calendar-task-card"
+            [ngClass]="'status-' + task.status"
+            cdkDrag
+            [cdkDragData]="task"
+            (click)="openTaskPanel(task)"
+          >
             {{ task.title }}
           </div>
         </div>
       </div>
+    </div>
   </div>
   

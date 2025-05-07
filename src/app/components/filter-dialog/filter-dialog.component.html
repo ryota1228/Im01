@@ -1,20 +1,5 @@
 <h2 class="filter-title">フィルター条件</h2>
 
-<!-- 状態 -->
-<div class="filter-section">
-  <div class="filter-toggle" (click)="toggleSection('status')">
-    <span>状態</span>
-    <span class="arrow">{{ isOpen.status ? '▲' : '▼' }}</span>
-  </div>
-  <div class="filter-content" *ngIf="isOpen.status">
-    <div class="filter-option" *ngFor="let status of allStatuses">
-      <mat-checkbox class="filter-checkbox" [(ngModel)]="selectedStatusesMap[status]">
-        {{ status }}
-      </mat-checkbox>
-    </div>
-  </div>
-</div>
-
 <!-- 担当者 -->
 <div class="filter-section">
   <div class="filter-toggle" (click)="toggleSection('assignee')">
@@ -35,6 +20,21 @@
   </div>
 </div>
 
+<!-- 状態 -->
+<div class="filter-section">
+  <div class="filter-toggle" (click)="toggleSection('status')">
+    <span>ステータス</span>
+    <span class="arrow">{{ isOpen.status ? '▲' : '▼' }}</span>
+  </div>
+  <div class="filter-content" *ngIf="isOpen.status">
+    <div class="filter-option" *ngFor="let status of allStatuses">
+      <mat-checkbox class="filter-checkbox" [(ngModel)]="selectedStatusesMap[status]">
+        {{ status }}
+      </mat-checkbox>
+    </div>
+  </div>
+</div>
+
 <!-- 優先度 -->
 <div class="filter-section">
   <div class="filter-toggle" (click)="toggleSection('priority')">
@@ -50,7 +50,27 @@
   </div>
 </div>
 
-<!-- アクション -->
+<!-- ✅ その他条件（見積 < 実績、期日超過） -->
+<div class="filter-section">
+  <div class="filter-toggle" (click)="toggleSection('extra')">
+    <span>その他条件</span>
+    <span class="arrow">{{ isOpen.extra ? '▲' : '▼' }}</span>
+  </div>
+  <div class="filter-content" *ngIf="isOpen.extra">
+    <div class="filter-option">
+      <mat-checkbox class="filter-checkbox" [(ngModel)]="estimateLessThanActualOnly">
+        見積 < 実績 のタスクのみ
+      </mat-checkbox>
+    </div>
+    <div class="filter-option">
+      <mat-checkbox class="filter-checkbox" [(ngModel)]="overdueOnly">
+        期日が超過しているタスクのみ
+      </mat-checkbox>
+    </div>
+  </div>
+</div>
+
+<!-- フィルター操作ボタン -->
 <div class="filter-actions">
   <button class="filter-button cancel-button" mat-button (click)="onCancel()">キャンセル</button>
   <button class="filter-button clear-button" mat-button (click)="onClear()">クリア</button>

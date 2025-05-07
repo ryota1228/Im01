@@ -1,50 +1,67 @@
-<h2>参加ユーザーを選択</h2>
+<div class="invite-member-dialog">
+  <h2 class="dialog-title">参加ユーザーを選択</h2>
 
-<input [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" placeholder="メールアドレス または 表示名で検索" />
+  <input
+    [(ngModel)]="searchTerm"
+    (ngModelChange)="onSearchChange()"
+    placeholder="メールアドレス または 表示名で検索"
+    class="search-input"
+  />
 
-<div *ngFor="let user of filteredUsers">
-  <label>
-    <input
-    type="checkbox"
-    [checked]="selectedUserIds.has(user.uid)"
-    [disabled]="isAlreadyMember(user.uid)"
-    (change)="toggleSelection(user.uid)"
-    />
-    {{ user.displayName }}（{{ user.email }}）
-  </label>
-</div>
-
-<div class="dialog-actions">
-    <button (click)="addSelectedUsers()">追加する</button>
-    <button (click)="dialogRef.close()">キャンセル</button>
-</div>
-
-<hr />
-<h3>参加中のメンバー一覧</h3>
-<div class="member-list">
-    <div *ngFor="let member of memberList" class="member-row">
-      <span>{{ member.displayName }}（{{ member.email }}）</span>
-      
-      <select *ngIf="member.uid !== ownerId"
-  [(ngModel)]="selectedUserRoles[member.uid]"
-  (ngModelChange)="updateMemberRole(member.uid, $event)">
-  <option value="editor">編集者</option>
-  <option value="viewer">閲覧者</option>
-</select>
-
-  
-      <button *ngIf="member.uid !== ownerId"
-              (click)="confirmRemoveMember(member.uid)"
-              class="remove-button">
-              削除
-      </button>
+  <div class="user-list">
+    <div *ngFor="let user of filteredUsers" class="user-row">
+      <label class="user-label">
+        <input
+          type="checkbox"
+          [checked]="selectedUserIds.has(user.uid)"
+          [disabled]="isAlreadyMember(user.uid)"
+          (change)="toggleSelection(user.uid)"
+        />
+        <span>{{ user.displayName }}（{{ user.email }}）</span>
+      </label>
     </div>
-
-    <div class="dialog-actions">
-        <button (click)="saveMemberRoles()">保存</button>
-        <button (click)="dialogRef.close()">閉じる</button>
-      </div>
   </div>
-  
-  
 
+  <div class="dialog-actions">
+    <button class="cancel-button" (click)="dialogRef.close()">キャンセル</button>
+    <button class="confirm-button" (click)="addSelectedUsers()">追加する</button>
+  </div>
+
+  <hr />
+
+  <h3 class="dialog-subtitle">参加中のメンバー一覧</h3>
+
+  <div class="member-list">
+    <div *ngFor="let member of memberList" class="member-row">
+      <span>
+        {{ member.displayName }}（{{ member.email }}）
+        <span *ngIf="member.uid === ownerId" class="owner-label">（オーナー）</span>
+      </span>
+
+      <ng-container *ngIf="member.uid !== ownerId">
+        <select
+          [(ngModel)]="selectedUserRoles[member.uid]"
+          (ngModelChange)="onRoleChanged(member.uid, $event)"
+          *ngIf="currentUserId === ownerId"
+        >
+          <option value="editor">編集者</option>
+          <option value="viewer">閲覧者</option>
+          <option value="owner">オーナー権限を譲渡</option>
+        </select>
+
+        <button
+          (click)="confirmRemoveMember(member.uid)"
+          class="remove-button"
+          *ngIf="currentUserId === ownerId"
+        >
+          削除
+        </button>
+      </ng-container>
+    </div>
+  </div>
+
+  <div class="dialog-actions">
+    <button class="cancel-button" (click)="dialogRef.close()">閉じる</button>
+    <button class="confirm-button" (click)="saveMemberRoles()">保存</button>
+  </div>
+</div>

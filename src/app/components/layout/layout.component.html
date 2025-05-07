@@ -6,11 +6,9 @@
 
     <div class="topbar-content">
       <ng-container *ngIf="user$ | async as user">
-        <span class="user-email">
-          {{ user.displayName }}
-        </span>
-
-        <button class="logout-btn" (click)="logout()">
+        <span class="user-name">ログイン中のユーザー：{{ displayName }}（{{ user.email }}）</span>
+        <button class="logout-button" (click)="logout()">
+          <span class="material-icons">logout</span>
           ログアウト
         </button>
       </ng-container>
@@ -60,9 +58,7 @@
     
         </div>
 
-        <button *ngIf="openedSection === 'insight'" class="sidebar-link sidebar-sub add-project-btn" (click)="openCreateProjectDialog()">
-          ＋ 新規作成
-        </button>
+       
     
         <div *ngIf="openedSection === 'insight'" class="sidebar-menu-list accordion-body">
           <a href="project/sample-project" class="sidebar-link sidebar-sub">
@@ -84,8 +80,25 @@
             >
               {{ project.title }}
             </a>
+
         </div>
       </div>
+
+      <div class="sidebar-link" (click)="toggleProjectList()">
+        <span class="material-icons">folder</span>プロジェクト
+        <span class="material-icons arrow">{{ isProjectListOpen ? 'expand_less' : 'expand_more' }}</span>
+      </div>
+
+      <button *ngIf="isProjectListOpen" class="sidebar-link sidebar-sub add-project-btn" (click)="openCreateProjectDialog()">
+        ＋ 新規作成
+      </button>
+      
+      <div *ngIf="isProjectListOpen" class="project-list">
+        <a *ngFor="let p of joinedProjects" [routerLink]="['/project', p.id]" class="sidebar-sub-link">{{ p.title }}</a>
+      </div>
+
+
+      
     </aside>
 
     <main class="content-scroll">
