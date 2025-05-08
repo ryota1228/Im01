@@ -80,6 +80,7 @@
         class="task-section-wrapper"
         [hidden]="selectedSections[0] !== 'すべて' && !selectedSections.includes(entry.section.title)"
       >
+
         <div class="task-section">
           <div class="section-header">
             <span class="arrow" (click)="toggleSection(entry.section.title)">
@@ -106,13 +107,28 @@
             </div>
 
             <div class="add-task-button-wrapper">
-              <button (click)="startAddTask(entry.section.title)" class="section-action-button" *ngIf="!entry.section.isFixed && userRole !== 'viewer'"><span class="material-icons">add</span>新規タスク追加</button>
+              <button
+                *ngIf="entry.section.title !== '目標・マイルストーン' && !entry.section.isFixed && userRole !== 'viewer'"
+                (click)="startAddTask(entry.section.title)"
+                class="section-action-button"
+              >
+                <span class="material-icons">add</span>新規タスク追加
+              </button>
+            
+              <!-- ✅ マイルストーン追加ボタン（同スタイル） -->
+              <button
+                *ngIf="entry.section.title === '目標・マイルストーン' && userRole !== 'viewer'"
+                (click)="createMilestone(entry.section.id)"
+                class="section-action-button"
+              >
+                <span class="material-icons">add</span>マイルストーン追加
+              </button>
             </div>
-
-            <button (click)="copyTasksDialogOpen(entry.section)" class="section-action-button copy-task-button" *ngIf="!entry.section.isFixed && userRole !== 'viewer'"><span class="material-icons">content_copy</span>セクション内タスクを一括複製</button>
+            
+            <button (click)="copyTasksDialogOpen(entry.section)" class="section-action-button copy-task-button" *ngIf="entry.section.title !== '目標・マイルストーン' && !entry.section.isFixed && userRole !== 'viewer'"><span class="material-icons">content_copy</span>セクション内タスクを一括複製</button>
 
             <button
-                  *ngIf="!entry.section.isFixed && userRole !== 'viewer'"
+            *ngIf="entry.section.title !== '目標・マイルストーン' && !entry.section.isFixed && userRole !== 'viewer'"
                   class="section-action-button delete-section-button"
                   (click)="deleteSectionDialogOpen(entry.section)"
                 >
@@ -124,17 +140,105 @@
           <div *ngIf="addingSection === entry.section.title" class="add-task-form">
             <input type="text" placeholder="タイトル" [(ngModel)]="newTask.title" />
             <select [(ngModel)]="newTask.assignee">
-              <option value="">--担当者未設定--</option>
+              <option value="">-担当者未設定-</option>
               <option *ngFor="let member of members" [value]="member.uid">
                 {{ member.displayName }}
               </option>
             </select>
+            <!-- <select [(ngModel)]="newTask.parentMilestoneId">
+              <option value="">-マイルストーン未設定-</option>
+              <option *ngFor="let ms of allMilestones" [value]="ms.id">
+                {{ ms.title }}
+              </option>
+            </select> -->
             <input type="date" [(ngModel)]="newTask.dueDate" />
             <button (click)="saveTask()">保存</button>
             <button (click)="cancelAddTask()">キャンセル</button>
           </div>
 
           <ng-container *ngIf="!isSectionCollapsed(entry.section.title)">
+
+            <div *ngIf="entry.section.title === '目標・マイルストーン'">
+              <!-- 目標カード -->
+<div class="goal-card">
+
+  <!-- 編集モード -->
+  <div *ngIf="editingGoal; else goalStaticBlock" class="add-task-form">
+    <input
+      type="text"
+      [(ngModel)]="newGoalTitle"
+      placeholder="タイトル"
+    />
+    <input
+      type="date"
+      [(ngModel)]="newGoalDueDate"
+    />
+    <button (click)="saveGoal()">保存</button>
+    <button (click)="cancelEditGoal()">キャンセル</button>
+    <div class="goal-delete-placeholder"></div>
+    
+  </div>
+
+  <!-- 表示モード -->
+  <ng-template #goalStaticBlock>
+    <div class="task-title" (click)="editingGoal = true">
+      🎯 {{ entry.goal?.title ?? '目標' }}
+    </div>
+    <span class="meta-item dueDate">期日: {{ entry.goal?.dueDate }}</span>
+    <div class="task-meta-horizontal">
+      
+      <!-- <span class="meta-separator">｜</span>
+      <span class="meta-item progress">進捗率: {{ entry.goal?.progress ?? 0 }}%</span> -->
+    </div>
+    <span class="meta-item progress">進捗率:</span>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" [style.width.%]="entry.goal?.progress ?? 0"></div>
+    </div>
+  </ng-template>
+
+</div>
+
+              <!-- マイルストーンカード -->
+<div *ngFor="let ms of entry.milestones" class="milestone-card"  [class.completed]="ms.status === '完了'">
+  <div *ngIf="editingMilestoneId === ms.id; else staticMilestone" class="add-task-form">
+    <input
+      type="text"
+      [(ngModel)]="newMilestoneTitle"
+      placeholder="タイトル"
+    />
+    <input
+      type="date"
+      [(ngModel)]="newMilestoneDueDate"
+    />
+    <button (click)="saveMilestone(entry.section.id)">保存</button>
+    <button (click)="cancelEditMilestone()">キャンセル</button>
+    <button (click)="deleteMilestone(entry.section.id, ms.id)" class="delete-milestone-button">
+      <span class="material-icons">delete</span>削除
+    </button>
+  </div>
+
+  <ng-template #staticMilestone>
+    <div class="task-title" (click)="startEditMilestone(ms)">
+      📌 {{ ms.title ?? 'マイルストーン' }}
+    </div>
+    <div class="task-meta-horizontal">
+      <span class="meta-item dueDate">期日: {{ ms.dueDate }}</span>
+      <!-- <span class="meta-separator">｜</span>
+      <span class="meta-item progress">進捗率: {{ ms.progress }}%</span> -->
+    </div>
+<!-- 
+    <span class="meta-item progress">進捗率:</span>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" [style.width.%]="ms.progress"></div>
+    </div> -->
+  </ng-template>
+</div>
+
+
+
+            </div>
+
+
             <div
               [cdkDropListDisabled]="entry.section.isFixed === true || userRole === 'viewer'"
               cdkDropList
@@ -195,7 +299,7 @@
                 </div>
               </div>
 
-              <div class="empty-drop-zone" *ngIf="entry.tasks.length === 0">
+              <div class="empty-drop-zone" *ngIf="entry.tasks.length === 0 && entry.section.title !== '目標・マイルストーン'">
                 ドラッグ＆ドロップでタスクを移動
               </div>
             </div>

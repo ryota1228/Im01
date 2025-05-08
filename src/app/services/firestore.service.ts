@@ -15,7 +15,8 @@ import {
   docData,
   getDocs,
   query,
-  where
+  where,
+  orderBy
 } from '@angular/fire/firestore';
 import { Injectable, inject } from '@angular/core';
 import { Observable, tap } from 'rxjs';
@@ -26,6 +27,7 @@ import { Section } from '../models/section.model';
 import { firstValueFrom } from 'rxjs';
 import { Input } from '@angular/core';
 import { Project } from '../models/project.model';
+import { GoalCard, MilestoneCard } from '../models/goal.model';
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
@@ -38,6 +40,13 @@ export class FirestoreService {
   constructor(
     private firestore: Firestore = inject(Firestore)
   ) {}
+
+  getTasksByParentMilestoneId(projectId: string, milestoneId: string): Observable<Task[]> {
+    const tasksRef = collection(this.firestore, `projects/${projectId}/tasks`);
+    const q = query(tasksRef, where('parentMilestoneId', '==', milestoneId));
+    return collectionData(q, { idField: 'id' }) as Observable<Task[]>;
+  }
+  
 
   initializeDefaultSections(projectId: string): Promise<void> {
     const defaultSections = [
@@ -181,9 +190,12 @@ export class FirestoreService {
 
   async getSectionsOnce(projectId: string): Promise<Section[]> {
     const sectionRef = collection(this.firestore, `projects/${projectId}/sections`);
-    return await firstValueFrom(
-      collectionData(sectionRef, { idField: 'id' }) as Observable<Section[]>
-    );
+    const q = query(sectionRef, orderBy('order'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Section));
   }
 
   getProjectMemberIds(projectId: string): Promise<string[]> {
@@ -259,5 +271,15 @@ export class FirestoreService {
     const path = `projects/${projectId}/members/${userId}`;
     const data = await this.getDocument<{ role: string }>(path);
     return data?.role as 'owner' | 'editor' | 'viewer' ?? null;
-  }  
+  }
+
+  getGoalCard(projectId: string, sectionId: string): Observable<GoalCard | null> {
+    const goalRef = doc(this.firestore, `projects/${projectId}/sections/${sectionId}/goals/goal`);
+    return docData(goalRef) as Observable<GoalCard>;
+  }
+  
+  getMilestoneCards(projectId: string, sectionId: string): Observable<MilestoneCard[]> {
+    const milestoneRef = collection(this.firestore, `projects/${projectId}/sections/${sectionId}/milestones`);
+    return collectionData(milestoneRef, { idField: 'id' }) as Observable<MilestoneCard[]>;
+  }
 }

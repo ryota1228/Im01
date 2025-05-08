@@ -1,5 +1,5 @@
 <div class="task-detail-panel" *ngIf="task">
-  <button class="back-button" (click)="onClosePanel()">← プロジェクトに戻る</button>
+  <!-- <button class="back-button" (click)="onClosePanel()">← プロジェクトに戻る</button> -->
 
   <div class="validation-error" *ngIf="validationError">
     {{ validationError }}
@@ -52,7 +52,11 @@
     <div class="form-group">
       <label>セクション</label>
       <select [(ngModel)]="task.section" [disabled]="userRole === 'viewer'" [ngClass]="{ 'input-error': !task.section || task.section === '' }">
-        <option *ngFor="let section of sections" [value]="section.title">{{ section.title }}</option>
+        <ng-container *ngFor="let section of sections">
+          <option *ngIf="section.title !== '目標・マイルストーン'" [value]="section.title">
+            {{ section.title }}
+          </option>
+        </ng-container>
       </select>
     </div>
 

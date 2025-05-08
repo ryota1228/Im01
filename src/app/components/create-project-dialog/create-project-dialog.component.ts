@@ -49,7 +49,8 @@ export class CreateProjectDialogComponent {
     await this.firestoreService.setDocument(`projects/${projectId}/members/${user.uid}`, {
       uid: user.uid,
       displayName,
-      email: user.email ?? ''
+      email: user.email ?? '',
+      role: 'owner'
     });
   
     this.dialogRef.close(projectId);

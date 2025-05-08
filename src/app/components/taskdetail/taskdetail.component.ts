@@ -441,27 +441,31 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
   }
 
   openDuplicateDialog(): void {
-    this.isDuplicating = true;
+    this.isDuplicatingTask = true;
+    this.selectedCopyTarget = null;
     this.duplicateTargetSectionId = null;
   }
   
   cancelDuplicate(): void {
-    this.isDuplicating = false;
+    this.isDuplicatingTask = false;
     this.duplicateTargetSectionId = null;
+    this.selectedCopyTarget = null;
   }
   
   async confirmDuplicate(): Promise<void> {
-    if (!this.task || !this.projectId || !this.duplicateTargetSectionId) return;
+    if (!this.task || !this.projectId || !this.selectedCopyTarget) return;
   
-    const newTask = {
-      ...this.task,
-      id: '',
+    const newTask: Task = {
+      ...structuredClone(this.task), // cloneDeep でもOK
+      id: '', // 新規作成
       title: this.task.title + '（複製）',
-      section: this.sections.find(s => s.id === this.duplicateTargetSectionId)?.title || '',
-      order: null
+      section: this.sections.find(s => s.id === this.selectedCopyTarget)?.title || '',
+      order: null,
+      history: [], // 複製では履歴は持たせない
     };
+  
     await this.firestoreService.addTask(this.projectId, newTask);
-    this.isDuplicating = false;
+    this.isDuplicatingTask = false;
   }
 
   async onFileSelected(event: any) {

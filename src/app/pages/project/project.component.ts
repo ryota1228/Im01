@@ -23,12 +23,23 @@ import { AppComponent } from '../../app.component';
 import { AuthService } from '../../services/auth.service';
 import { CopyTasksDialogComponent } from '../../components/copy-tasks-dialog/copy-tasks-dialog.component';
 import { InviteMemberDialogComponent } from '../../components/invite-member-dialog/invite-member-dialog.component';
-import { UserRole } from '../../models/user-role.model';
 import { CalendarViewComponent } from '../../components/calendar-view/calendar-view.component';
 import { ViewChild } from '@angular/core';
 import { subMonths, addMonths } from 'date-fns';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ConfirmCompleteDialogComponent } from '../../components/confirm-complete-dialog/confirm-complete-dialog.component';
+import { GoalCard, MilestoneCard } from '../../models/goal.model';
+import { collection, addDoc, deleteDoc } from '@angular/fire/firestore';
+import { ChangeDetectorRef } from '@angular/core';
+import { combineLatest, firstValueFrom, Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
+import { setDoc } from '@angular/fire/firestore';
+interface SectionEntry {
+  section: Section;
+  tasks: Task[];
+  goal?: GoalCard | null;
+  milestones?: MilestoneCard[];
+}
 
 @Component({
   selector: 'app-project',
@@ -38,6 +49,8 @@ import { ConfirmCompleteDialogComponent } from '../../components/confirm-complet
   styleUrls: ['./project.component.css'],
   encapsulation: ViewEncapsulation.None
 })
+
+
 export class ProjectComponent implements OnInit {
   projectId: string | null = null;
   projectTitle: string = 'プロジェクト名';
@@ -58,8 +71,16 @@ export class ProjectComponent implements OnInit {
   editingSectionTitle: string = '';
 
   
-  sectionsWithTasks: { section: Section; tasks: Task[] }[] = [];
+  sectionsWithTasks: SectionEntry[] = [];
   sectionOrder: Section[] = [];
+
+  editingGoal = false;
+  newGoalTitle: string = '目標';
+  newGoalDueDate: string = '';
+  editingMilestoneId: string | null = null;
+  newMilestoneTitle: string = '';
+  newMilestoneDueDate: string = '';
+
 
   addingNewSection: boolean = false;
   newSectionTitle: string = '';
@@ -104,7 +125,22 @@ export class ProjectComponent implements OnInit {
   totalCompletionRate: number = 0;
   actualIncompleteTotal: number = 0;
   showCalendar = true;
+  allMilestones: MilestoneCard[] = [];
+  private sectionSub?: Subscription;
+  private taskSub?: Subscription;
 
+  constructor(
+    private route: ActivatedRoute,
+    private firestoreService: FirestoreService,
+    private firestore: Firestore,
+    private dialog: MatDialog,
+    private taskPanelService: TaskPanelService,
+    private snackBar: MatSnackBar,
+    private appComponent: AppComponent,
+    private authService: AuthService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   @ViewChild(CalendarViewComponent) calendarComp?: CalendarViewComponent;
   
@@ -136,17 +172,7 @@ onTaskPanelClosed(updated: boolean): void {
 
   }
 
-  constructor(
-    private route: ActivatedRoute,
-    private firestoreService: FirestoreService,
-    private firestore: Firestore,
-    private dialog: MatDialog,
-    private taskPanelService: TaskPanelService,
-    private snackBar: MatSnackBar,
-    private appComponent: AppComponent,
-    private authService: AuthService,
-    private router: Router,
-  ) {}
+
 
   @ViewChild(CalendarViewComponent) calendarComponentRef!: CalendarViewComponent;
 
@@ -245,99 +271,309 @@ onTaskPanelClosed(updated: boolean): void {
       `projects/${this.projectId}/tasks/${task.id}`, updates
     );
 
+    if (newStatus.includes('完了') && task.parentMilestoneId) {
+
+      console.log('[Debug] 子タスク完了: ', task.title, task.parentMilestoneId)
+
+      const siblings = await firstValueFrom(
+        this.firestoreService.getTasksByParentMilestoneId(this.projectId!, task.parentMilestoneId)
+      );
+    
+      const allDone = siblings.every(t => t.status === '完了');
+    
+      if (allDone) {
+        const milestoneRef = doc(
+          this.firestore,
+          `projects/${this.projectId}/sections/${task.section}/milestones/${task.parentMilestoneId}`
+        );
+        await updateDoc(milestoneRef, { status: '完了' });
+      }
+    }
+    
     this.loadSectionsAndTasks(this.projectId);
   }
 
-  loadSectionsAndTasks(projectId: string): void {
-    this.firestoreService.getSections(projectId).subscribe(sections => {
-      this.sectionOrder = sections.sort((a, b) => a.order - b.order);
-      this.availableSections = ['すべて', ...sections.map(s => s.title)];
+  async loadSectionsAndTasks(projectId: string): Promise<void> {
+    const sections$ = this.firestoreService.getSections(projectId).pipe(take(1));
+    const tasks$ = this.firestoreService.getTasksByProjectId(projectId).pipe(take(1));
+    const [sections, tasks]: [Section[], Task[]] = await firstValueFrom(
+      combineLatest([sections$, tasks$]));
   
-      this.firestoreService.getTasksByProjectId(projectId).subscribe(tasks => {
-        tasks.forEach(task => {
-          if (task.dueDate && (task.dueDate as any).toDate) {
-            task.dueDate = (task.dueDate as Timestamp).toDate();
-          }
-        });
+    this.sections = sections;
+    this.tasks = tasks;
+  
+    await this.renderSectionsAndTasks(sections, tasks);
+  
+    this.sectionSub?.unsubscribe();
+    this.taskSub?.unsubscribe();
+  
 
-        this.calculateCalendarSummary(tasks, this.currentDate);
+    this.sectionSub = this.firestoreService.getSections(projectId).subscribe(latestSections => {
+      this.sections = latestSections;
+      this.sectionOrder = latestSections.sort((a, b) => a.order - b.order);
+    });
   
-        let filteredTasks = [...tasks];
-  
-        if (this.selectedStatuses.length > 0 && !this.selectedStatuses.includes('すべて')) {
-          filteredTasks = filteredTasks.filter(t => this.selectedStatuses.includes(t.status));
-        }
-  
-        if (this.selectedAssignees?.length > 0) {
-          filteredTasks = filteredTasks.filter(t =>
-            this.selectedAssignees.includes(this.getAssigneeName(t.assignee))
-          );
-        }
-  
-        if (this.selectedPriorities?.length > 0) {
-          filteredTasks = filteredTasks.filter(t =>
-            this.selectedPriorities.includes(t.priority ?? '')
-          );
-        }
-
-        if (this.estimateLessThanActualOnly) {
-          filteredTasks = filteredTasks.filter(t =>
-            t.estimate != null && t.actual != null && t.estimate < t.actual
-          );
-        }
-
-        if (this.overdueOnly) {
-          const now = new Date().setHours(0, 0, 0, 0);
-          filteredTasks = filteredTasks.filter(t =>
-            t.dueDate && new Date(t.dueDate).getTime() < now && t.status !== '完了'
-          );
-        }
-        
-        const grouped: { [key: string]: Task[] } = {};
-        for (const task of filteredTasks) {
-          const section = task.section || '未分類';
-          if (!grouped[section]) grouped[section] = [];
-          grouped[section].push(task);
-        }
-  
-        this.sectionsWithTasks = this.sectionOrder.map(sec => {
-          const isCompleted = sec.isFixed === true;
-          if (isCompleted) this.collapsedSections.add(sec.title);
-  
-          let tasks = grouped[sec.title] || [];
-  
-          switch (sec.selectedSort) {
-            case 'dueDate':
-              tasks = tasks.sort((a, b) =>
-                new Date(a.dueDate ?? '').getTime() - new Date(b.dueDate ?? '').getTime()
-              );
-              break;
-            case 'priority':
-              const priorityMap: { [key: string]: number } = { '最優先': 1, '高': 2, '中': 3, '低': 4 };
-              tasks = tasks.sort((a, b) =>
-                (priorityMap[a.priority ?? ''] ?? 99) - (priorityMap[b.priority ?? ''] ?? 99)
-              );
-              break;
-            case 'default':
-            default:
-              tasks = tasks.sort((a, b) => {
-                if (isCompleted) {
-                  return (a.completionOrder || 0) - (b.completionOrder || 0);
-                }
-                if (a.order != null && b.order != null) return a.order - b.order;
-                if (a.order != null) return -1;
-                if (b.order != null) return 1;
-                return 0;
-              });
-              break;
-          }
-  
-          return { section: sec, tasks };
-        });
-      });
+    this.taskSub = this.firestoreService.getTasksByProjectId(projectId).subscribe(latestTasks => {
+      this.tasks = latestTasks;
     });
   }
-    
+
+  private async renderSectionsAndTasks(sections: Section[] | unknown, tasks: Task[] | unknown): Promise<void> {
+    if (!Array.isArray(sections) || !Array.isArray(tasks)) {
+      console.error('セクションまたはタスクの型が不正です');
+      return;
+    }
+  
+    this.sectionOrder = sections.sort((a, b) => a.order - b.order);
+    this.availableSections = ['すべて', ...sections.map(s => s.title)];
+  
+    tasks.forEach(task => {
+      if (task.dueDate && (task.dueDate as any).toDate) {
+        task.dueDate = (task.dueDate as Timestamp).toDate();
+      }
+    });
+  
+    this.calculateCalendarSummary(tasks, this.currentDate);
+    let filteredTasks = [...tasks];
+  
+    if (this.selectedStatuses.length > 0 && !this.selectedStatuses.includes('すべて')) {
+      filteredTasks = filteredTasks.filter(t => this.selectedStatuses.includes(t.status));
+    }
+  
+    if (this.selectedAssignees?.length > 0) {
+      filteredTasks = filteredTasks.filter(t =>
+        this.selectedAssignees.includes(this.getAssigneeName(t.assignee))
+      );
+    }
+  
+    if (this.selectedPriorities?.length > 0) {
+      filteredTasks = filteredTasks.filter(t =>
+        this.selectedPriorities.includes(t.priority ?? '')
+      );
+    }
+  
+    if (this.estimateLessThanActualOnly) {
+      filteredTasks = filteredTasks.filter(t =>
+        t.estimate != null && t.actual != null && t.estimate < t.actual
+      );
+    }
+  
+    if (this.overdueOnly) {
+      const now = new Date().setHours(0, 0, 0, 0);
+      filteredTasks = filteredTasks.filter(t =>
+        t.dueDate && new Date(t.dueDate).getTime() < now && t.status !== '完了'
+      );
+    }
+  
+    const grouped: { [key: string]: Task[] } = {};
+    for (const task of filteredTasks) {
+      const section = task.section || '未分類';
+      if (!grouped[section]) grouped[section] = [];
+      grouped[section].push(task);
+    }
+  
+    this.sectionsWithTasks = [];
+  
+    for (const sec of this.sectionOrder) {
+      const isCompleted = sec.isFixed === true;
+      if (isCompleted) this.collapsedSections.add(sec.title);
+  
+      let sectionTasks = grouped[sec.title] || [];
+  
+      switch (sec.selectedSort) {
+        case 'dueDate':
+          sectionTasks = sectionTasks.sort((a, b) =>
+            new Date(a.dueDate ?? '').getTime() - new Date(b.dueDate ?? '').getTime()
+          );
+          break;
+        case 'priority':
+          const priorityMap: { [key: string]: number } = { '最優先': 1, '高': 2, '中': 3, '低': 4 };
+          sectionTasks = sectionTasks.sort((a, b) =>
+            (priorityMap[a.priority ?? ''] ?? 99) - (priorityMap[b.priority ?? ''] ?? 99)
+          );
+          break;
+        case 'default':
+        default:
+          sectionTasks = sectionTasks.sort((a, b) => {
+            if (isCompleted) {
+              return (a.completionOrder || 0) - (b.completionOrder || 0);
+            }
+            if (a.order != null && b.order != null) return a.order - b.order;
+            if (a.order != null) return -1;
+            if (b.order != null) return 1;
+            return 0;
+          });
+          break;
+      }
+  
+      const entry: SectionEntry = { section: sec, tasks: sectionTasks };
+  
+      if (sec.title === '目標・マイルストーン' && this.projectId) {
+        const goal = await firstValueFrom(this.firestoreService.getGoalCard(this.projectId, sec.id).pipe(take(1)));
+        if (goal) {
+          const totalEstimate = tasks.reduce((sum, t) => sum + (t.estimate ?? 0), 0);
+          const completedEstimate = tasks
+            .filter(t => t.status === '完了')
+            .reduce((sum, t) => sum + (t.estimate ?? 0), 0);
+          goal.progress = totalEstimate > 0 ? Math.round((completedEstimate / totalEstimate) * 100) : 0;
+  
+          const ref = doc(this.firestore, `projects/${this.projectId}/sections/${sec.id}/goals/goal`);
+          await updateDoc(ref, { progress: goal.progress });
+  
+          entry.goal = goal;
+          this.newGoalTitle = goal.title ?? '目標';
+          this.newGoalDueDate = goal.dueDate;
+        }
+  
+        const milestones = await firstValueFrom(
+          this.firestoreService.getMilestoneCards(this.projectId, sec.id).pipe(take(1))
+        );
+        entry.milestones = milestones;
+      }
+  
+      this.sectionsWithTasks.push(entry);
+    }
+  
+    if (this.projectId) {
+      this.allMilestones = await this.loadAllMilestones(this.projectId);
+    }
+  
+    this.cdr.detectChanges();
+  }
+  
+  
+
+  // async loadSectionsAndTasks(projectId: string): Promise<void> {
+  //   this.firestoreService.getSections(projectId).subscribe(sections => {
+  //     this.sectionOrder = sections.sort((a, b) => a.order - b.order);
+  //     this.availableSections = ['すべて', ...sections.map(s => s.title)];
+  
+  //     this.firestoreService.getTasksByProjectId(projectId).subscribe(tasks => {
+  //       tasks.forEach(task => {
+  //         if (task.dueDate && (task.dueDate as any).toDate) {
+  //           task.dueDate = (task.dueDate as Timestamp).toDate();
+  //         }
+  //       });
+  
+  //       this.calculateCalendarSummary(tasks, this.currentDate);
+  //       let filteredTasks = [...tasks];
+  
+  //       if (this.selectedStatuses.length > 0 && !this.selectedStatuses.includes('すべて')) {
+  //         filteredTasks = filteredTasks.filter(t => this.selectedStatuses.includes(t.status));
+  //       }
+  
+  //       if (this.selectedAssignees?.length > 0) {
+  //         filteredTasks = filteredTasks.filter(t =>
+  //           this.selectedAssignees.includes(this.getAssigneeName(t.assignee))
+  //         );
+  //       }
+  
+  //       if (this.selectedPriorities?.length > 0) {
+  //         filteredTasks = filteredTasks.filter(t =>
+  //           this.selectedPriorities.includes(t.priority ?? '')
+  //         );
+  //       }
+  
+  //       if (this.estimateLessThanActualOnly) {
+  //         filteredTasks = filteredTasks.filter(t =>
+  //           t.estimate != null && t.actual != null && t.estimate < t.actual
+  //         );
+  //       }
+  
+  //       if (this.overdueOnly) {
+  //         const now = new Date().setHours(0, 0, 0, 0);
+  //         filteredTasks = filteredTasks.filter(t =>
+  //           t.dueDate && new Date(t.dueDate).getTime() < now && t.status !== '完了'
+  //         );
+  //       }
+  
+  //       const grouped: { [key: string]: Task[] } = {};
+  //       for (const task of filteredTasks) {
+  //         const section = task.section || '未分類';
+  //         if (!grouped[section]) grouped[section] = [];
+  //         grouped[section].push(task);
+  //       }
+  
+  //       this.sectionsWithTasks = [];
+  
+  //       this.sectionOrder.forEach(sec => {
+  //         const isCompleted = sec.isFixed === true;
+  //         if (isCompleted) this.collapsedSections.add(sec.title);
+  
+  //         let tasks = grouped[sec.title] || [];
+  
+  //         switch (sec.selectedSort) {
+  //           case 'dueDate':
+  //             tasks = tasks.sort((a, b) =>
+  //               new Date(a.dueDate ?? '').getTime() - new Date(b.dueDate ?? '').getTime()
+  //             );
+  //             break;
+  //           case 'priority':
+  //             const priorityMap: { [key: string]: number } = { '最優先': 1, '高': 2, '中': 3, '低': 4 };
+  //             tasks = tasks.sort((a, b) =>
+  //               (priorityMap[a.priority ?? ''] ?? 99) - (priorityMap[b.priority ?? ''] ?? 99)
+  //             );
+  //             break;
+  //           case 'default':
+  //           default:
+  //             tasks = tasks.sort((a, b) => {
+  //               if (isCompleted) {
+  //                 return (a.completionOrder || 0) - (b.completionOrder || 0);
+  //               }
+  //               if (a.order != null && b.order != null) return a.order - b.order;
+  //               if (a.order != null) return -1;
+  //               if (b.order != null) return 1;
+  //               return 0;
+  //             });
+  //             break;
+  //         }
+  
+  //         const entry: SectionEntry = { section: sec, tasks };
+  
+  //         if (sec.title === '目標・マイルストーン' && this.projectId) {
+  //           this.firestoreService.getGoalCard(this.projectId, sec.id).pipe(take(1)).subscribe(goal => {
+  //             if (goal) {
+  //               const allTasks = this.tasks;
+  //               const totalEstimate = allTasks.reduce((sum, t) => sum + (t.estimate ?? 0), 0);
+  //               const completedEstimate = allTasks
+  //                 .filter(t => t.status === '完了')
+  //                 .reduce((sum, t) => sum + (t.estimate ?? 0), 0);
+  //               goal.progress = totalEstimate > 0 ? Math.round((completedEstimate / totalEstimate) * 100) : 0;
+  //               const ref = doc(this.firestore, `projects/${this.projectId}/sections/${sec.id}/goals/goal`);
+  //               updateDoc(ref, { progress: goal.progress });
+  //               entry.goal = goal;
+  //               this.newGoalTitle = goal.title ?? '目標';
+  //               this.newGoalDueDate = goal.dueDate;
+  //               this.cdr.detectChanges();
+  //             }
+  //           });
+  
+  //           this.firestoreService.getMilestoneCards(this.projectId, sec.id).pipe(take(1)).subscribe(milestones => {
+  //             for (const milestone of milestones) {
+  //               const dependentTasks = tasks.filter(t => t.parentMilestoneId === milestone.id);
+  //               const estimateAll = dependentTasks.reduce((sum, t) => sum + (t.estimate ?? 0), 0);
+  //               const estimateCompleted = dependentTasks
+  //                 .filter(t => t.status === '完了')
+  //                 .reduce((sum, t) => sum + (t.estimate ?? 0), 0);
+  //               milestone.progress = estimateAll > 0
+  //                 ? Math.round((estimateCompleted / estimateAll) * 100) : 0;
+  //             }
+  //             entry.milestones = milestones;
+  //             this.cdr.detectChanges();
+  //           });
+  //         }
+  
+  //         this.sectionsWithTasks.push(entry);
+  //       });
+  
+  //       // 🔽 リアルタイムでは不要なマイルストーン一覧だけ firstValueFrom に切り替え
+  //       this.loadAllMilestones(this.projectId!).then(milestones => {
+  //         this.allMilestones = milestones;
+  //         this.cdr.detectChanges();
+  //       });
+  //     });
+  //   });
+  // }
 
   addSectionDialogOpen(): void {
     const dialogRef = this.dialog.open(AddSectionDialogComponent, {
@@ -507,15 +743,16 @@ onTaskPanelClosed(updated: boolean): void {
       ? new Date(this.newTask.dueDate)
       : this.newTask.dueDate || null;
   
-    const task: Task = {
-      id: '',
-      title: this.newTask.title!,
-      assignee: this.newTask.assignee || '',
-      dueDate: dueDate,
-      status: '未着手',
-      section: sectionTitle,
-      order: 0,
-    };
+      const task: Task = {
+        id: '',
+        title: this.newTask.title!,
+        assignee: this.newTask.assignee || '',
+        dueDate: dueDate,
+        status: '未着手',
+        section: sectionTitle,
+        order: 0,
+        ...(this.newTask.parentMilestoneId ? { parentMilestoneId: this.newTask.parentMilestoneId } : {})
+      };
   
     await this.firestoreService.addTask(this.projectId, task);
   
@@ -865,5 +1102,113 @@ formatDueDate(dueDate: any): string {
       }
     }
   }
+
+  async saveGoal(): Promise<void> {
+    if (!this.projectId || !this.sectionOrder) return;
   
+    const goalSection = this.sectionOrder.find(s => s.title === '目標・マイルストーン');
+    if (!goalSection) return;
+  
+    const ref = doc(this.firestore, `projects/${this.projectId}/sections/${goalSection.id}/goals/goal`);
+try {
+  await updateDoc(ref, {
+    title: this.newGoalTitle,
+    dueDate: this.newGoalDueDate
+  });
+} catch (e: any) {
+  if (e.code === 'not-found') {
+    // ドキュメントが存在しない場合は setDoc で新規作成
+    await setDoc(ref, {
+      title: this.newGoalTitle,
+      dueDate: this.newGoalDueDate
+    });
+  } else {
+    throw e; // その他のエラーは再スロー
+  }
 }
+  }
+  
+  cancelEditGoal(): void {
+    this.editingGoal = false;
+  }  
+
+  createMilestone(sectionId: string): void {
+    if (!this.projectId) return;
+  
+    const newMilestone: MilestoneCard = {
+      id: '',
+      type: 'milestone',
+      title: 'マイルストーン',
+      dueDate: new Date().toISOString().split('T')[0],
+      dependentTaskIds: [],
+      progress: 0,
+      sectionTitle: ''
+    };
+  
+    const milestoneRef = collection(this.firestore, `projects/${this.projectId}/sections/${sectionId}/milestones`);
+    addDoc(milestoneRef, newMilestone)
+      .then(() => {
+        this.snackBar.open('✅ マイルストーンを作成しました', '', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'bottom',
+          panelClass: ['success-snackbar']
+        });
+        this.loadSectionsAndTasks(this.projectId!);
+      });
+  }
+  
+  startEditMilestone(ms: MilestoneCard): void {
+    this.editingMilestoneId = ms.id;
+    this.newMilestoneTitle = ms.title ?? 'マイルストーン';
+    this.newMilestoneDueDate = ms.dueDate;
+  }
+  
+
+  async saveMilestone(sectionId: string): Promise<void> {
+    if (!this.projectId || !this.editingMilestoneId) return;
+  
+    const ref = doc(
+      this.firestore,
+      `projects/${this.projectId}/sections/${sectionId}/milestones/${this.editingMilestoneId}`
+    );
+    await updateDoc(ref, {
+      title: this.newMilestoneTitle,
+      dueDate: this.newMilestoneDueDate
+    });
+  
+    this.editingMilestoneId = null;
+    this.loadSectionsAndTasks(this.projectId!);
+  }
+  
+  cancelEditMilestone(): void {
+    this.editingMilestoneId = null;
+  }
+
+
+  async deleteMilestone(sectionId: string, milestoneId: string): Promise<void> {
+    if (!this.projectId) return;
+  
+    const ref = doc(this.firestore, `projects/${this.projectId}/sections/${sectionId}/milestones/${milestoneId}`);
+    await deleteDoc(ref);
+    this.editingMilestoneId = null;
+    this.loadSectionsAndTasks(this.projectId!);
+  }
+
+  async loadAllMilestones(projectId: string): Promise<MilestoneCard[]> {
+    const sections = await this.firestoreService.getSectionsOnce(projectId);
+    const all: MilestoneCard[] = [];
+  
+    for (const sec of sections) {
+      const snap = await firstValueFrom(this.firestoreService.getMilestoneCards(projectId, sec.id));
+      all.push(...(snap || []).map(m => ({
+        ...m,
+        sectionTitle: sec.title
+      })));
+    }
+    return all;
+  }
+
+}
+
+

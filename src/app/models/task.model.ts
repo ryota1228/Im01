@@ -26,6 +26,7 @@ export interface Task {
   completionOrder?: number | null;
   descriptionDelta?: any;
   attachments?: Attachment[];
+  parentMilestoneId?: string;
 }
 
 export interface Attachment {
