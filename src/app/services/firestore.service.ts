@@ -69,6 +69,7 @@ export class FirestoreService {
     return addDoc(ref, data);
   }
 
+
   setDocument(
     path: string,
     data: any
@@ -194,9 +195,10 @@ export class FirestoreService {
     });
   }
 
-  getProjectMembers(projectId: string): Observable<{ uid: string, displayName: string, email: string }[]> {
-    const membersRef = collection(this.firestore, `projects/${projectId}/members`);
-    return collectionData(membersRef, { idField: 'uid' }) as Observable<{ uid: string, displayName: string, email: string }[]>;
+  async getProjectMembers(projectId: string): Promise<{ uid: string; displayName: string; email: string; role: string }[]> {
+    const membersCollection = collection(this.firestore, `projects/${projectId}/members`);
+    const snap = await getDocs(membersCollection);
+    return snap.docs.map(doc => ({ uid: doc.id, ...(doc.data() as any) }));
   }
     
   addSection(projectId: string, section: { title: string; order: number }) {

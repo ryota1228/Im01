@@ -32,6 +32,7 @@ import { FormControl } from '@angular/forms';
 import { NgModel } from '@angular/forms';
 import { Timestamp } from 'firebase/firestore';
 import { AfterViewInit } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-taskdetail',
@@ -162,20 +163,18 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
   
     // 添付ファイルを復元
     this.attachedFiles = Array.isArray(this.task.attachments)
-  ? this.task.attachments.map(att => {
-      return {
-        ...att,
-        name: att.name,
-        size: 0,
-        type: att.type,
-        lastModified: Date.now(),
-        arrayBuffer: async () => new ArrayBuffer(0),
-        slice: () => new Blob(),
-        stream: () => new ReadableStream(),
-        text: async () => '',
-      } as File & Partial<Attachment>;
-    })
-  : [];
+      ? this.task.attachments.map(att => ({
+          ...att,
+          name: att.name,
+          size: 0,
+          type: att.type,
+          lastModified: Date.now(),
+          arrayBuffer: async () => new ArrayBuffer(0),
+          slice: () => new Blob(),
+          stream: () => new ReadableStream(),
+          text: async () => '',
+        }) as File & Partial<Attachment>)
+      : [];
   
     this.originalTask = JSON.parse(JSON.stringify(this.task));
   
@@ -183,26 +182,19 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
       this.sections = sections;
     });
   
-    this.firestoreService.getDocument<any>(`projects/${this.projectId}`).then(project => {
-      if (project?.memberIds) {
-        this.firestoreService.getUsersByIds(project.memberIds).then(users => {
-          this.members = users.map(user => ({ uid: user.uid, displayName: user.displayName }));
+    // プロジェクトのメンバー情報（role付き）を取得
+    const allMembers = await this.firestoreService.getProjectMembers(this.projectId);
   
-          this.historyUserMap = new Map<string, string>();
-          for (const user of users) {
-            this.historyUserMap.set(user.uid, user.displayName);
-          }
+    // 担当者に選べるのは owner または editor のみ
+    this.members = allMembers
+      .filter(m => ['owner', 'editor'].includes(m.role))
+      .map(m => ({ uid: m.uid, displayName: m.displayName }));
   
-          if (currentUserUid) {
-            this.firestoreService.getUserById(currentUserUid).then(user => {
-              if (user?.displayName) {
-                this.historyUserMap.set(currentUserUid, user.displayName);
-              }
-            });
-          }
-        });
-      }
-    });
+    // 履歴表示などに使う表示名マップ（全員対象）
+    this.historyUserMap = new Map<string, string>();
+    for (const m of allMembers) {
+      this.historyUserMap.set(m.uid, m.displayName);
+    }
   }
 
   async ngAfterViewInit(): Promise<void> {

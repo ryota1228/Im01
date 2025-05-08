@@ -77,19 +77,19 @@ export class FilterDialogComponent implements OnInit {
     this.estimateLessThanActualOnly = estimateLessThanActualOnly;
     this.overdueOnly = overdueOnly;
   
-    this.firestoreService.getProjectMembers(this.data.projectId).subscribe(members => {
+    this.firestoreService.getProjectMembers(this.data.projectId).then(members => {
       const names = members
         .map(m => m.displayName)
         .filter(name => typeof name === 'string' && name.trim().length > 0);
-  
+    
       this.allAssignees = names;
-  
+    
       for (const name of this.allAssignees) {
         if (this.selectedAssigneesMap[name] === undefined) {
           this.selectedAssigneesMap[name] = false;
         }
       }
-    });
+    });    
   }  
   
   applyFilters(): void {
