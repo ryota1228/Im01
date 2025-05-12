@@ -11,10 +11,13 @@ import {
   UserCredential,
   sendPasswordResetEmail
 } from '@angular/fire/auth';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, Observable } from 'rxjs';
 import { UserService } from './user.service';
 
+
 @Injectable({ providedIn: 'root' })
+
+
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
@@ -72,7 +75,18 @@ export class AuthService {
     return createUserWithEmailAndPassword(this.auth, email, password);
   }
 
+  async getCurrentUserSync(): Promise<User> {
+    const user = await firstValueFrom(this.currentUser$);
+    if (!user) throw new Error('ユーザー未ログイン');
+    return user;
+  }
+
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
+  }
+
+  async getCurrentUid(): Promise<string | null> {
+    const user = await this.getCurrentUser();
+    return user ? user.uid : null;
   }
 }

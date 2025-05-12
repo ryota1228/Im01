@@ -1,0 +1,58 @@
+<div class="team-task-summary">
+  <div class="filters">
+    <label>期間:
+      <select [(ngModel)]="period" (change)="onPeriodChange()">
+        <option value="today">今日</option>
+        <option value="week">今週</option>
+        <option value="month">今月</option>
+      </select>
+    </label>
+
+    <label>フィルター:
+      <select [(ngModel)]="filter">
+        <option value="all">すべて</option>
+        <option value="completed">完了</option>
+        <option value="overdue">期限超過</option>
+        <option value="assigned">割り当てあり</option>
+      </select>
+    </label>
+  </div>
+
+  <table class="task-summary-table">
+    <thead>
+      <tr>
+        <th>タスク名</th>
+        <th>担当者</th>
+        <th>期日</th>
+        <th>ステータス</th>
+        <th>進捗率</th>
+        <th>プロジェクト</th>
+        <th>見積もり</th>
+        <th>実績</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let task of filteredTasks()">
+        <td>
+          <button type="button" (click)="openTask(task)" class="task-title-button">
+            {{ task.title }}
+          </button>
+        </td>
+        <td>{{ task.assigneeName || '-' }}</td>
+        <td>{{ task.dueDate | date: 'yyyy/MM/dd' }}</td>
+        <td>{{ task.status }}</td>
+        <td>{{ task.progress }}%</td>
+        <td>{{ task.projectName }}</td>
+        <td>{{ task.estimate || 0 }}</td>
+        <td>{{ task.actual || 0 }}</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="6">合計</td>
+        <td>{{ total('estimate') }}</td>
+        <td>{{ total('actual') }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>

@@ -1,0 +1,21 @@
+.admin-tools-container {
+    padding: 24px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  button {
+    padding: 10px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    background-color: #1976d2;
+    color: white;
+    cursor: pointer;
+  }
+  
+  button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  

@@ -16,7 +16,10 @@ import {
   getDocs,
   query,
   where,
-  orderBy
+  orderBy,
+  arrayRemove,
+  arrayUnion,
+  Timestamp
 } from '@angular/fire/firestore';
 import { Injectable, inject } from '@angular/core';
 import { Observable, tap } from 'rxjs';
@@ -28,6 +31,11 @@ import { firstValueFrom } from 'rxjs';
 import { Input } from '@angular/core';
 import { Project } from '../models/project.model';
 import { GoalCard, MilestoneCard } from '../models/goal.model';
+import { Notification } from '../models/notification.model';
+import { NotificationSettings } from '../models/notification-settings.model';
+import { Team } from '../models/team.model';
+import { User } from '../models/user.model';
+
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
@@ -35,10 +43,11 @@ export class FirestoreService {
   @Input() projectId!: string;
 
   isFixed = true
+  private userTaskCache: Task[] | null = null;
 
 
   constructor(
-    private firestore: Firestore = inject(Firestore)
+    private firestore: Firestore = inject(Firestore),
   ) {}
 
   getTasksByParentMilestoneId(projectId: string, milestoneId: string): Observable<Task[]> {
@@ -110,13 +119,28 @@ export class FirestoreService {
     return docData(ref) as Observable<T>;
   }
 
-  getProjectsByUser(userId: string): Observable<Project[]> {
+  async getProjectsByUser(userIds: string[]): Promise<Project[]> {
+    if (!userIds || userIds.length === 0) return [];
+  
     const q = query(
       collection(this.firestore, 'projects'),
-      where('memberIds', 'array-contains', userId)
+      where('memberIds', 'array-contains-any', userIds)
     );
-    return collectionData(q, { idField: 'id' }) as Observable<Project[]>;
-  }  
+  
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+  }
+
+  async getProjectsByUsers(userIds: string[]): Promise<Project[]> {
+    if (!userIds || userIds.length === 0) return [];
+  
+    const q = query(
+      collection(this.firestore, 'projects'),
+      where('memberIds', 'array-contains-any', userIds)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+  }
 
   getTasks(): Observable<Task[]> {
     const tasksRef = collection(this.firestore, 'tasks') as CollectionReference<Task>;
@@ -139,13 +163,15 @@ export class FirestoreService {
   async getTasksByProjectIdOnce(projectId: string): Promise<Task[]> {
     const querySnapshot = await getDocs(collection(this.firestore, `projects/${projectId}/tasks`));
     return querySnapshot.docs.map(doc => {
-      const data = doc.data() as Omit<Task, 'id'>;
+      const data = doc.data() as Omit<Task, 'id' | 'projectId'>;
       return {
         ...data,
-        id: doc.id
+        id: doc.id,
+        projectId
       };
     });
-  }  
+  }
+  
 
   getUsersByIds(userIds: string[]): Promise<{ uid: string, displayName: string }[]> {
     const userPromises = userIds.map(uid =>
@@ -282,4 +308,415 @@ export class FirestoreService {
     const milestoneRef = collection(this.firestore, `projects/${projectId}/sections/${sectionId}/milestones`);
     return collectionData(milestoneRef, { idField: 'id' }) as Observable<MilestoneCard[]>;
   }
+
+  async getNotifications(userId: string): Promise<Notification[]> {
+    const q = query(
+      collection(this.firestore, 'notifications'),
+      where('recipientId', '==', userId),
+      orderBy('timestamp', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    })) as Notification[];
+  }
+  
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    const ref = doc(this.firestore, `notifications/${notificationId}`);
+    await updateDoc(ref, { isRead: true });
+  }
+  
+  async createNotification(data: Omit<Notification, 'id'>): Promise<void> {
+    await addDoc(collection(this.firestore, 'notifications'), data);
+  }
+
+  async getNotificationSettings(userId: string): Promise<NotificationSettings | null> {
+    const ref = doc(this.firestore, `users/${userId}`);
+    const snap = await getDoc(ref);
+    return snap.exists() ? (snap.data() as any).notificationSettings as NotificationSettings : null;
+  }
+  
+  async updateNotificationSettings(userId: string, settings: NotificationSettings): Promise<void> {
+    const ref = doc(this.firestore, `users/${userId}`);
+    await setDoc(ref, { notificationSettings: settings }, { merge: true });
+  }
+
+  async sendNotificationToProjectMembers(
+    projectId: string,
+    taskId: string,
+    taskName: string,
+    type: Notification['type'],
+    performerUid: string
+  ): Promise<void> {
+    const membersSnap = await getDoc(doc(this.firestore, `projects/${projectId}`));
+    const memberIds: string[] = membersSnap.data()?.['memberIds'] || [];
+  
+    for (const uid of memberIds) {
+      if (uid === performerUid) continue;
+  
+      const settingsSnap = await getDoc(doc(this.firestore, `users/${uid}`));
+      const settings = settingsSnap.data()?.['notificationSettings'] as NotificationSettings | undefined;
+  
+      if (!this.shouldNotify(type, uid, settings, performerUid, taskId)) continue;
+  
+      await addDoc(collection(this.firestore, 'notifications'), {
+        projectId,
+        taskId,
+        taskName,
+        type,
+        timestamp: new Date(),
+        isRead: false,
+        recipientId: uid,
+      });
+    }
+  }
+  
+
+  private shouldNotify(
+    type: Notification['type'],
+    uid: string,
+    settings: NotificationSettings | undefined,
+    performerUid: string,
+    taskId: string
+  ): boolean {
+    if (!settings) return false;
+  
+    switch (type) {
+      case 'new':
+        return settings.newTask === 'all' || (settings.newTask === 'assigned' && this.isAssignedTo(uid, taskId));
+      case 'update':
+        return settings.taskUpdate === 'all' || (settings.taskUpdate === 'assigned' && this.isAssignedTo(uid, taskId));
+      case 'comment':
+        return settings.comment === 'all' || (settings.comment === 'assigned' && this.isAssignedTo(uid, taskId));
+      case 'deadline':
+        return settings.deadline.enabled;
+      case 'progress':
+        return settings.progress;
+      default:
+        return false;
+    }
+  }
+  
+
+  private isAssignedTo(uid: string, taskId: string): boolean {
+    
+    return true;
+  }
+
+async sendSlackNotification(uid: string, taskTitle: string) {
+  const userDoc = await this.getUserDocument(uid);
+  const webhookUrl = userDoc?.slackWebhook;
+  if (!webhookUrl) return;
+
+  const payload = {
+    text: `📝 新しいタスクが作成されました: *${taskTitle}*`
+  };
+
+  await fetch(webhookUrl, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+async getUserDocument(uid: string): Promise<any> {
+  const docSnap = await getDoc(doc(this.firestore, `users/${uid}`));
+  return docSnap.exists() ? docSnap.data() : null;
+}
+
+async getAllNotifications(uid: string): Promise<Notification[]> {
+  const q = query(
+    collection(this.firestore, 'notifications'),
+    where('recipientId', '==', uid),
+    orderBy('timestamp', 'desc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(docSnap => ({
+    id: docSnap.id,
+    ...docSnap.data()
+  })) as Notification[];
+}
+
+async getTaskById(projectId: string, taskId: string): Promise<Task | null> {
+  const docRef = doc(this.firestore, `projects/${projectId}/tasks/${taskId}`);
+  const snap = await getDoc(docRef);
+  return snap.exists() ? { id: snap.id, ...snap.data() } as Task : null;
+  
+}
+
+async getUserAttendanceStatusSafe(uid: string): Promise<string> {
+  const ref = doc(this.firestore, `users/${uid}`);
+  const snap = await getDoc(ref);
+  return snap.exists() ? (snap.data()['currentAttendanceStatus'] ?? '') : '';
+}
+
+async setUserAttendanceStatusSafe(uid: string, status: string): Promise<void> {
+  const ref = doc(this.firestore, `users/${uid}`);
+  await setDoc(ref, { currentAttendanceStatus: status }, { merge: true });
+}
+
+async getAllTasksByUserOnce(uid: string): Promise<Task[]> {
+  if (this.userTaskCache) return this.userTaskCache;
+
+  const projectsSnap = await getDocs(
+    query(collection(this.firestore, 'projects'), where('memberIds', 'array-contains', uid))
+  );
+
+  const allTasks: Task[] = [];
+
+  for (const project of projectsSnap.docs) {
+    const projectId = project.id;
+    const tasksRef = collection(this.firestore, `projects/${projectId}/tasks`);
+    const tasksSnap = await getDocs(tasksRef);
+
+    for (const doc of tasksSnap.docs) {
+      const task = { id: doc.id, ...doc.data(), projectId } as Task;
+      if (task.assignee === uid) {
+        allTasks.push(task);
+      }
+    }
+  }
+
+  this.userTaskCache = allTasks;
+  return allTasks;
+}
+
+
+async getPinnedProjectIdsSafe(uid: string): Promise<string[]> {
+  const ref = doc(this.firestore, `users/${uid}`);
+  const snap = await getDoc(ref);
+  return snap.exists() ? (snap.data()['pinnedProjects'] ?? []) : [];
+}
+
+async togglePinProjectSafe(uid: string, projectId: string): Promise<void> {
+  const ref = doc(this.firestore, `users/${uid}`);
+  const snap = await getDoc(ref);
+  const data = snap.exists() ? snap.data() : {};
+  const current: string[] = data['pinnedProjects'] ?? [];
+
+  if (current.includes(projectId)) {
+    await updateDoc(ref, { pinnedProjects: arrayRemove(projectId) });
+  } else {
+    await updateDoc(ref, { pinnedProjects: arrayUnion(projectId) });
+  }
+}
+
+  async getAllTeams(): Promise<Team[]> {
+    const snap = await getDocs(collection(this.firestore, 'teams'));
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Team));
+  }
+
+  async createTeam(data: { name: string; createdBy: string }): Promise<void> {
+    const ref = doc(collection(this.firestore, 'teams'));
+    await setDoc(ref, {
+      name: data.name,
+      createdBy: data.createdBy,
+      memberIds: [data.createdBy],
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  async updateTeamName(teamId: string, newName: string): Promise<void> {
+    await updateDoc(doc(this.firestore, 'teams', teamId), { name: newName });
+  }
+
+  async deleteTeam(teamId: string): Promise<void> {
+    await deleteDoc(doc(this.firestore, 'teams', teamId));
+  }
+
+  async addTeamToProject(teamId: string, projectId: string): Promise<void> {
+    const projectRef = doc(this.firestore, 'projects', projectId);
+    await updateDoc(projectRef, { teamIds: arrayUnion(teamId) });
+  }
+
+  async getTeamMembers(teamId: string): Promise<User[]> {
+    const teamSnap = await getDoc(doc(this.firestore, 'teams', teamId));
+    const memberIds = teamSnap.data()?.['memberIds'] || [];
+    const usersSnap = await getDocs(query(collection(this.firestore, 'users'), where('uid', 'in', memberIds)));
+    return usersSnap.docs.map(d => d.data() as User);
+  }
+
+  async addMemberToTeam(teamId: string, uid: string): Promise<void> {
+    // チームのドキュメントにメンバー追加
+    await updateDoc(doc(this.firestore, 'teams', teamId), {
+      memberIds: arrayUnion(uid)
+    });
+  
+    // 該当ユーザーが参加しているプロジェクトを取得
+    const projectsSnap = await getDocs(
+      query(collection(this.firestore, 'projects'), where('memberIds', 'array-contains', uid))
+    );
+  
+    // まだ含まれていないプロジェクトがあれば追加（このステップは既参加チェック後も有効）
+    const allProjectsSnap = await getDocs(collection(this.firestore, 'projects'));
+    const allProjects = allProjectsSnap.docs;
+  
+    for (const projectDoc of allProjects) {
+      const projectId = projectDoc.id;
+      const data = projectDoc.data();
+      const currentMemberIds = data['memberIds'] || [];
+  
+      if (!currentMemberIds.includes(uid)) {
+        await updateDoc(doc(this.firestore, 'projects', projectId), {
+          memberIds: arrayUnion(uid)
+        });
+      }
+    }
+  }
+  
+
+  async removeMemberFromTeam(teamId: string, uid: string): Promise<void> {
+    await updateDoc(doc(this.firestore, 'teams', teamId), {
+      memberIds: arrayRemove(uid)
+    });
+  }
+
+  async getTasksByTeam(teamId: string, period: 'today' | 'week' | 'month'): Promise<Task[]> {
+    const teamSnap = await getDoc(doc(this.firestore, 'teams', teamId));
+    const memberIds: string[] = teamSnap.data()?.['memberIds'] || [];
+    if (!memberIds.length) return [];
+  
+    const projectsSnap = await getDocs(collection(this.firestore, 'projects'));
+    const allTasks: Task[] = [];
+  
+    for (const project of projectsSnap.docs) {
+      const projectId = project.id;
+      const tasksSnap = await getDocs(
+        query(
+          collection(this.firestore, `projects/${projectId}/tasks`),
+          where('assignee', 'in', memberIds)
+        )
+      );
+  
+      for (const doc of tasksSnap.docs) {
+        const data = doc.data() as Task;
+        const taskDueDate = (data.dueDate instanceof Timestamp)
+          ? data.dueDate.toDate()
+          : new Date(data.dueDate);
+  
+        if (!this.isDateInPeriod(taskDueDate, period)) continue;
+  
+        allTasks.push({
+          ...data,
+          id: doc.id,
+          projectId
+        });
+      }
+    }
+  
+    return allTasks;
+  }
+
+  private isDateInPeriod(date: Date, period: 'today' | 'week' | 'month'): boolean {
+    const now = new Date();
+    const target = new Date(date);
+
+    switch (period) {
+      case 'today':
+        return target.toDateString() === now.toDateString();
+
+      case 'week': {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        return target >= weekStart && target <= weekEnd;
+      }
+
+      case 'month':
+        return (
+          target.getFullYear() === now.getFullYear() &&
+          target.getMonth() === now.getMonth()
+        );
+    }
+  }
+  
+  async getProjectsByUserId(uid: string): Promise<Project[]> {
+    const q = query(
+      collection(this.firestore, 'projects'),
+      where('memberIds', 'array-contains', uid)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+  }  
+
+  async getAllUsers(): Promise<User[]> {
+    const snap = await getDocs(collection(this.firestore, 'users'));
+    return snap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        uid: doc.id,
+        displayName: data['displayName'] ?? '未設定',
+        email: data['email'] ?? ''
+      };
+    });
+  }
+
+  async getProjectsByTeam(teamId: string): Promise<Project[]> {
+    const q = query(
+      collection(this.firestore, 'projects'),
+      where('teamIds', 'array-contains', teamId)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+  }
+
+  async getProjectsByIds(projectIds: string[]): Promise<Project[]> {
+    if (projectIds.length === 0) return [];
+  
+    const projectDocs = await getDocs(
+      query(collection(this.firestore, 'projects'), where('__name__', 'in', projectIds))
+    );
+  
+    return projectDocs.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+  }
+
+  async syncTeamMembersToProjects(): Promise<void> {
+    const teamsSnap = await getDocs(collection(this.firestore, 'teams'));
+    const allProjectsSnap = await getDocs(collection(this.firestore, 'projects'));
+  
+    const allProjects = allProjectsSnap.docs.map(doc => ({
+      id: doc.id,
+      ref: doc.ref,
+      data: doc.data()
+    }));
+  
+    for (const teamDoc of teamsSnap.docs) {
+      const teamData = teamDoc.data();
+      const memberIds: string[] = teamData['memberIds'] || [];
+  
+      for (const uid of memberIds) {
+        for (const project of allProjects) {
+          const projectMemberIds: string[] = project.data['memberIds'] || [];
+  
+          if (!projectMemberIds.includes(uid)) {
+            console.log(`[SYNC] 追加: ${uid} を project: ${project.id} に`);
+            await updateDoc(project.ref, {
+              memberIds: arrayUnion(uid)
+            });
+          }
+        }
+      }
+    }
+  
+    console.log('✅ 全チームメンバーのプロジェクト参加同期が完了しました');
+  }
+
+  async getProjectTitleById(projectId: string): Promise<string | null> {
+    try {
+      const docRef = doc(this.firestore, `projects/${projectId}`);
+      const snapshot = await getDoc(docRef);
+      if (snapshot.exists()) {
+        return snapshot.data()['title'] ?? null;
+      } else {
+        console.warn(`プロジェクト ${projectId} が見つかりません`);
+        return null;
+      }
+    } catch (e) {
+      console.error('プロジェクトタイトルの取得に失敗:', e);
+      return null;
+    }
+  }  
+      
 }

@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { Task, TaskHistoryEntry } from '../../models/task.model';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, getDoc, getDocs } from 'firebase/firestore';
 import { Firestore } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -25,7 +25,6 @@ import { QuillModules } from 'ngx-quill';
 import { QuillEditorComponent } from 'ngx-quill';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ViewChild } from '@angular/core';
-import { Attachment } from '../../models/task.model';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Storage } from '@angular/fire/storage';
 import { FormControl } from '@angular/forms';
@@ -33,6 +32,8 @@ import { NgModel } from '@angular/forms';
 import { Timestamp } from 'firebase/firestore';
 import { AfterViewInit } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { TaskPanelService } from '../../services/task-panel.service';
+import { Attachment, DisplayedAttachment } from '../../models/task.model';
 
 @Component({
   selector: 'app-taskdetail',
@@ -74,12 +75,19 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
   duplicateTargetSectionId: string | null = null;
   isDuplicatingTask = false;
   selectedCopyTarget: string | null = null;
-  attachedFiles: Attachment[] = [];
   showEditor = false;
   isDescriptionFocused = false;
   descriptionPreview: string = '';
   attachments: Attachment[] = [];
   descriptionControl = new FormControl('');
+
+
+  isBlockingDialogOpen: boolean = false;
+
+  projectTitle: string = '';
+  selectedFile: File | null = null;
+  uploadedFiles: DisplayedAttachment[] = [];
+
 
   quillModules: QuillModules = {
     toolbar: [
@@ -113,7 +121,8 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
     private calendarSyncService: CalendarSyncService,
-    private storage: Storage
+    private storage: Storage,
+    private taskPanelService: TaskPanelService
   ) {}
 
   get dueDateString(): string {
@@ -128,7 +137,6 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
     if (input.files) {
       for (const file of Array.from(input.files)) {
         console.log('アップロード:', file.name);
-        // Firestore Storage 等へアップロード処理追加
       }
     }
   }
@@ -144,11 +152,69 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
 
   async ngOnInit(): Promise<void> {
     const user = await this.authService.getCurrentUser();
+    const uid = user?.uid;
     this.currentUserName = user?.displayName ?? '';
-    const currentUserUid = user?.uid ?? '';
-    this.isViewerUser = this.userRole === 'viewer';
+    this.isViewerUser = true;
   
-    // デフォルト値の初期化
+    if (this.projectId && uid) {
+      const memberRef = doc(this.firestore, `projects/${this.projectId}/members/${uid}`);
+      const snap = await getDoc(memberRef);
+      if (snap.exists()) {
+        const role = snap.data()['role'] as UserRole;
+        this.isViewerUser = role === 'viewer';
+      }
+    }
+  
+    if (!this.task?.title && this.task?.id) {
+      const cached = this.taskPanelService.getTaskById(this.task.id);
+      if (cached) {
+        this.task = cached;
+      } else {
+        const fetched = await this.firestoreService.getTaskById(this.projectId, this.task.id);
+        if (fetched) this.task = fetched;
+      }
+    }
+  
+    if (this.task?.dueDate instanceof Timestamp) {
+      this.task.dueDate = this.task.dueDate.toDate();
+    }
+  
+    if (this.task?.dueDate && !(this.task.dueDate instanceof Date)) {
+      const parsed = new Date(this.task.dueDate);
+      if (!isNaN(parsed.getTime())) {
+        this.task.dueDate = parsed;
+      } else {
+        console.warn('不正なdueDate:', this.task.dueDate);
+        this.task.dueDate = null;
+      }
+    }
+  
+    if (!this.task?.title && this.task?.id && this.projectId) {
+      const fullTask = await this.firestoreService.getTaskById(this.projectId, this.task.id);
+      if (fullTask) {
+        const due = fullTask.dueDate;
+        if (due && typeof due === 'string') {
+          const parsed = new Date(due);
+          fullTask.dueDate = isNaN(parsed.getTime()) ? null : parsed;
+        }
+        this.task = fullTask;
+      } else {
+        console.warn('タスクが見つかりませんでした');
+        return;
+      }
+    }
+
+    if (this.task?.id) {
+      const fileSnap = await getDocs(collection(this.firestore, `tasks/${this.task.id}/files`));
+      this.uploadedFiles = fileSnap.docs.map(doc => {
+        const data = doc.data() as Attachment;
+        return {
+          id: doc.id,
+          ...data
+        };
+      });
+    }
+  
     if (!this.task.priority) this.task.priority = '最優先';
     if (this.task.progress == null) this.task.progress = 0;
     if (this.task.estimate == null) this.task.estimate = 0;
@@ -161,42 +227,28 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
       this.task.dueDate = new Date(this.task.dueDate);
     }
   
-    // 添付ファイルを復元
-    this.attachedFiles = Array.isArray(this.task.attachments)
-      ? this.task.attachments.map(att => ({
-          ...att,
-          name: att.name,
-          size: 0,
-          type: att.type,
-          lastModified: Date.now(),
-          arrayBuffer: async () => new ArrayBuffer(0),
-          slice: () => new Blob(),
-          stream: () => new ReadableStream(),
-          text: async () => '',
-        }) as File & Partial<Attachment>)
-      : [];
-  
     this.originalTask = JSON.parse(JSON.stringify(this.task));
   
     this.firestoreService.getSections(this.projectId).subscribe(sections => {
       this.sections = sections;
     });
   
-    // プロジェクトのメンバー情報（role付き）を取得
     const allMembers = await this.firestoreService.getProjectMembers(this.projectId);
   
-    // 担当者に選べるのは owner または editor のみ
     this.members = allMembers
       .filter(m => ['owner', 'editor'].includes(m.role))
       .map(m => ({ uid: m.uid, displayName: m.displayName }));
   
-    // 履歴表示などに使う表示名マップ（全員対象）
     this.historyUserMap = new Map<string, string>();
     for (const m of allMembers) {
       this.historyUserMap.set(m.uid, m.displayName);
     }
+  
+    const title = await this.firestoreService.getProjectTitleById(this.projectId);
+    this.projectTitle = title ?? '（不明なプロジェクト）';
   }
 
+  
   async ngAfterViewInit(): Promise<void> {
 
     setTimeout(() => {
@@ -221,15 +273,15 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
   
     const isNewTask = !this.task.id;
   
-    // Quillエディタ内容（Delta）と添付ファイル
+
     const deltaRaw = this.quillEditor?.quillEditor?.getContents();
     const delta = deltaRaw ? JSON.parse(JSON.stringify(deltaRaw)) : null;
 
-    const attachments: Attachment[] = this.attachedFiles.map(file => ({
+    const attachments: Attachment[] = this.uploadedFiles.map(file => ({
       name: file.name,
-      url: file.url,
       type: file.type,
-      uploadedAt: file.uploadedAt || new Date()
+      uploadedAt: file.uploadedAt || new Date(),
+      data: file.data
     }));
   
     if (isNewTask) {
@@ -253,10 +305,12 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
           history: [],
         }
       );
-      this.closed.emit();
+    
+      this.task.id = ref.id;
+      this.closed.emit(true);
       return;
     }
-  
+    
     if (!this.originalTask) return;
   
     const ref = doc(this.firestore, `projects/${this.projectId}/tasks/${this.task.id}`);
@@ -281,7 +335,11 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
     const historyEntries = this.generateHistoryEntries(this.originalTask, updatedTask);
     updatedTask.history.push(...historyEntries);
   
-    if (updatedTask.status === '完了' && this.autoMoveCompletedTasks === true) {
+    if (
+      updatedTask.status === '完了' &&
+      this.autoMoveCompletedTasks === true &&
+      this.originalTask?.status !== '完了'
+    ) {
       updatedTask.section = '完了済';
       this.snackBar.open('✔ タスクを完了済セクションに移動しました', '', {
         duration: 5000,
@@ -317,7 +375,6 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
     const fieldsToTrack: (keyof Task)[] = [
       'title', 'assignee', 'dueDate', 'status',
       'section', 'priority', 'progress', 'estimate', 'actual'
-      // ← description, attachments, chat は履歴対象から除外
     ];
   
     const history: TaskHistoryEntry[] = [];
@@ -367,8 +424,7 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
     const taskRef = doc(this.firestore, `projects/${this.projectId}/tasks/${this.task.id}`);
     try {
       await deleteDoc(taskRef);
-      console.log('削除完了');
-      this.closed.emit();
+      this.closed.emit(true);
     } catch (error) {
       console.error('削除エラー:', error);
     }
@@ -428,23 +484,63 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
   }
 
   confirmDeleteDialog(): void {
-    this.isConfirmingDelete = true;
-  }
+    this.isBlockingDialogOpen = true;
+    const dialogRef = this.dialog.open(ConfirmDeleteDialogComponent, {
+      data: { task: this.task },
+      disableClose: true,
+      hasBackdrop: true
+    });
+  
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.confirmDelete();
+      }
+      this.isBlockingDialogOpen = false;
+    });
+  }  
   
   async confirmDelete(): Promise<void> {
     await this.deleteTask();
     this.isConfirmingDelete = false;
+    this.closed.emit(true);
   }
+  
   
   cancelDelete(): void {
     this.isConfirmingDelete = false;
   }
 
   openDuplicateDialog(): void {
-    this.isDuplicatingTask = true;
-    this.selectedCopyTarget = null;
-    this.duplicateTargetSectionId = null;
+    this.isBlockingDialogOpen = true;
+    const dialogRef = this.dialog.open(CopyTasksDialogComponent, {
+      data: { sections: this.sections, taskTitle: this.task.title },
+      disableClose: true,
+      hasBackdrop: true
+    });
+  
+    dialogRef.afterClosed().subscribe((selectedSectionId: string | null) => {
+      if (selectedSectionId) {
+        this.confirmDuplicateWithSection(selectedSectionId);
+      }
+      this.isBlockingDialogOpen = false;
+    });
   }
+  
+  private async confirmDuplicateWithSection(sectionId: string): Promise<void> {
+    const newTask: Task = {
+      ...structuredClone(this.task),
+      id: '',
+      title: this.task.title + '（複製）',
+      section: this.sections.find(s => s.id === sectionId)?.title || '',
+      order: null,
+      history: [],
+    };
+  
+    await this.firestoreService.addTask(this.projectId, newTask);
+    this.closed.emit(true);
+    
+  }
+  
   
   cancelDuplicate(): void {
     this.isDuplicatingTask = false;
@@ -456,41 +552,48 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
     if (!this.task || !this.projectId || !this.selectedCopyTarget) return;
   
     const newTask: Task = {
-      ...structuredClone(this.task), // cloneDeep でもOK
-      id: '', // 新規作成
+      ...structuredClone(this.task),
+      id: '',
       title: this.task.title + '（複製）',
       section: this.sections.find(s => s.id === this.selectedCopyTarget)?.title || '',
       order: null,
-      history: [], // 複製では履歴は持たせない
+      history: [],
     };
   
     await this.firestoreService.addTask(this.projectId, newTask);
     this.isDuplicatingTask = false;
+    this.closed.emit(true);
   }
+  
 
   async onFileSelected(event: any) {
     const file = event.target.files[0];
-    const path = `attachments/${this.projectId}/${Date.now()}_${file.name}`;
-    const storageRef = ref(this.storage, path);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
+    if (!file || !this.task?.id) return;
   
-    const attachment: Attachment = {
-      name: file.name,
-      url,
-      type: file.type,
-      uploadedAt: new Date(),
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+  
+      const attachment: Attachment = {
+        name: file.name,
+        type: file.type,
+        uploadedAt: new Date(),
+        data: base64
+      };
+      await addDoc(collection(this.firestore, `tasks/${this.task.id}/files`), attachment);
+  
+      this.uploadedFiles.push({
+        id: 'temp-' + Date.now(),
+        name: attachment.name!,
+        type: attachment.type!,
+        uploadedAt: attachment.uploadedAt!,
+        data: attachment.data!
+      });
     };
-    
-    this.attachedFiles.push(attachment);
+  
+    reader.readAsDataURL(file);
   }
   
-  
-  async removeFile(file: Attachment) {
-    this.attachedFiles = this.attachedFiles.filter(f => f.url !== file.url);
-    const refToDelete = ref(this.storage, file.url);
-    await deleteObject(refToDelete);
-  }  
 
   onDescriptionFocus() {
     this.isDescriptionFocused = true;
@@ -527,9 +630,7 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
     this.insertAtSelection('- ');
   }
   
-  /**
-   * 選択範囲を指定タグで囲う
-   */
+
   wrapSelectionWithTag(tag: string) {
     const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
     if (!textarea) return;
@@ -543,9 +644,7 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
     this.task.description = textarea.value;
   }
   
-  /**
-   * 選択位置にテキストを挿入
-   */
+
   insertAtSelection(text: string) {
     const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
     if (!textarea) return;
@@ -554,8 +653,40 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
     textarea.setRangeText(text, start, start, 'end');
     this.task.description = textarea.value;
   }
-
   
+  async uploadFile() {
+    if (!this.selectedFile || !this.task?.id) return;
 
-  
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+
+      const filesRef = collection(this.firestore, `tasks/${this.task!.id}/files`);
+      await addDoc(filesRef, {
+        name: this.selectedFile!.name,
+        data: base64,
+        createdAt: Timestamp.now()
+      });
+
+      this.selectedFile = null;
+      await this.loadFiles();
+    };
+    reader.readAsDataURL(this.selectedFile);
+  }
+
+  async loadFiles() {
+    if (!this.task?.id) return;
+
+    const snapshot = await getDocs(collection(this.firestore, `tasks/${this.task.id}/files`));
+    this.uploadedFiles = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...(doc.data() as { name: string; data: string })
+    }));
+  }
+
+  async deleteFile(fileId: string) {
+    if (!this.task?.id) return;
+    await deleteDoc(doc(this.firestore, `tasks/${this.task.id}/files/${fileId}`));
+    this.uploadedFiles = this.uploadedFiles.filter(file => file.id !== fileId);
+  }
 }

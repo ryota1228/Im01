@@ -27,9 +27,14 @@ export interface Task {
   descriptionDelta?: any;
   attachments?: Attachment[];
   parentMilestoneId?: string;
+  updatedAt?: any;
+  projectId?: string;
+  assigneeName?: string;
+  projectName?: string;
 }
 
 export interface Attachment {
+  id?: string;
   name?: string;
   url?: string;
   type?: string;
@@ -41,10 +46,12 @@ export interface Attachment {
   slice?: (start?: number, end?: number, contentType?: string) => Blob;
   stream?: () => ReadableStream<Uint8Array>;
   text?: () => Promise<string>;
+  data?: string;
 };
 
-
-
+export interface DisplayedAttachment extends Attachment {
+  id: string;
+}
 
 function convertToDate(ts: any): Date | null {
   if (!ts) return null;

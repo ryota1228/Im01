@@ -1,10 +1,394 @@
-.home-container {
-    margin: 20px;
-  }
-  
-  .section {
-    margin-bottom: 30px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-  }
+/* 全体レイアウト */
+.team-container {
+  padding: 32px;
+  max-width: 960px;
+  margin: 0 auto;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* チーム作成／検索／操作 */
+.new-team,
+.team-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+input[type="text"],
+select {
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  min-width: 200px;
+}
+
+button {
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  background-color: #1976d2;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: #115293;
+}
+
+/* チーム一覧表示 */
+.team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* チームカード */
+.team-card {
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* チーム上部ヘッダー */
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.team-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.team-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 編集フォーム */
+.edit-form {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* 中身セクション（プロジェクト・メンバー・タスク） */
+.team-body {
+  margin-top: 16px;
+}
+
+.section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f7f9fc;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.section-title {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-title button {
+  background-color: #1976d2;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.section-title button:hover {
+  background-color: #125aa0;
+}
+
+button {
+  font-size: 14px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* 基本ボタン（編集など） */
+.btn-edit {
+  background-color: #1976d2;
+  color: white;
+}
+.btn-edit:hover {
+  background-color: #125aa0;
+}
+
+/* 削除ボタン */
+.btn-danger {
+  background-color: #e53935;
+  color: white;
+}
+.btn-danger:hover {
+  background-color: #c62828;
+}
+
+/* 補助ボタン（追加） */
+.btn-secondary {
+  background-color: #546e7a;
+  color: white;
+}
+.btn-secondary:hover {
+  background-color: #455a64;
+}
+
+/* 開閉トグル */
+.btn-toggle {
+  background-color: #eee;
+  color: #444;
+  border: 1px solid #ccc;
+}
+.btn-toggle:hover {
+  background-color: #ddd;
+}
+
+.item-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.item-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.item-list li .icon {
+  font-size: 18px;
+}
+
+.member-row {
+  justify-content: space-between;
+}
+
+.member-row .email {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-list li.empty {
+  color: #888;
+  font-style: italic;
+}
+
+button.small {
+  padding: 4px 8px;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 12px;
+  color: #2c3e50;
+  gap: 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #ddd;
+}
+
+.section-title .material-icons {
+  font-size: 20px;
+  vertical-align: middle;
+  color: #616161;
+}
+
+.section-title span.label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.section-title button {
+  font-size: 13px;
+  padding: 4px 10px;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 12px;
+  color: #2c3e50;
+  gap: 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* ボタンなし（タスク実績など）用 */
+.section-title.no-actions {
+  justify-content: flex-start;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #ddd;
+}
+
+.section-title .label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title button {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: 6px;
+  gap: 4px;
+}
+
+.section-body ul {
+  padding-left: 16px;
+  margin: 0;
+}
+
+.section-body li {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.text-muted {
+  color: #888;
+  font-size: 14px;
+}
+
+.team-container {
+  padding: 24px;
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* 操作エリア全体を囲む */
+.team-controls-area {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* チーム一覧エリアを囲む */
+.team-list {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* 各チームカード */
+.team-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+/* チームヘッダー */
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* チーム名 */
+.team-title {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+/* アクションボタン */
+.team-actions button {
+  margin-left: 8px;
+}
+
+/* セクション全体 */
+.section {
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  border: 1px solid #e0e0e0;
+}
+
+/* セクションのタイトル */
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+/* アイコン付きラベル */
+.label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* テキストが薄くなる */
+.text-muted {
+  color: #888;
+  font-style: italic;
+}

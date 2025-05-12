@@ -73,4 +73,9 @@
     color: #1976d2;
   }
   
-  
+  .status-未着手 { background-color: #b0c4de !important; }
+  .status-進行中 { background-color: #64b5f6 !important; }
+  .status-完了     { background-color: #81c784 !important; }
+  .status-確認待ち { background-color: #fff3e0 !important; }
+  .status-確認中   { background-color: #f3e5f5 !important; }
+  .status-差し戻し { background-color: #ffebee !important; }

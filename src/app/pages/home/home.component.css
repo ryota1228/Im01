@@ -1,11 +1,218 @@
-.home-container {
-    margin: 20px;
+/* ダッシュボード全体 */
+.dashboard-wrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 32px 48px;
+  max-width: 1200px;
+  margin: 32px auto;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* グリッドレイアウト */
+.home-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+  margin-top: 24px;
+}
+
+.home-main,
+.home-side {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 各セクション共通 */
+.section,
+.notification-preview {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  min-height: 160px;
+}
+
+.section h2,
+.notification-preview h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  border-left: 6px solid #1976d2;
+  padding-left: 12px;
+  font-size: 18px;
+  color: #1976d2;
+}
+
+ul {
+  padding-left: 20px;
+  margin: 0;
+}
+
+li {
+  list-style: none;
+  padding: 8px 0;
+  border-bottom: 1px dashed #ddd;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+li:hover {
+  background-color: #f5f5f5;
+}
+
+/* ボタン共通 */
+button {
+  margin-top: 6px;
+  margin-right: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #125a9c;
+}
+
+/* 通知リスト項目 */
+.notification-preview ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notification-preview li {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 8px;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.notification-preview li:hover {
+  background-color: #f4f6f8;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.notification-preview li span {
+  margin-left: 8px;
+  font-size: 13px;
+  color: #e53935;
+  font-weight: bold;
+}
+
+.section-scrollable {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.attendance-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.attendance-buttons button {
+  min-width: 60px;
+  height: 36px;
+  font-size: 14px;
+  padding: 0 6px;
+  border-radius: 6px;
+}
+
+.pin-button {
+  color: #ffffff;
+  transition: color 0.2s;
+  font-weight: bold;
+
+  &:hover {
+    color: #1976d2;
   }
-  
-  .section {
-    margin-bottom: 30px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+
+  &.pinned {
+    color: #1976d2;
+
+    &:hover {
+      color: #42a5f5;
+    }
   }
-  
+}
+
+li {
+  position: relative;
+  padding-right: 120px;
+}
+
+.pin-button {
+  position: absolute;
+  right: 0;
+  top: 40%;
+  transform: translateY(-50%);
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+.pin-button:hover {
+  color: #1976d2;
+}
+
+.pin-button.pinned {
+  color: #1976d2;
+}
+
+.pin-button.pinned:hover {
+  color: #42a5f5;
+}
+
+.pin-button {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: white; /* ← 追加 */
+  font-weight: bold;
+  background-color: #1976d2;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.pin-button:hover {
+  background-color: #1565c0;
+}
+
+.pin-button.pinned {
+  background-color: #0d47a1;
+}
+
+.pin-button.pinned:hover {
+  background-color: #08306b;
+}
+
+.pin-button.pinned {
+  background-color: #1565c0; /* ← 明るめのブルーに */
+  color: white;
+}
+
+.pin-button.pinned:hover {
+  background-color: #0d47a1; /* ホバー時は少し濃く */
+}
+
+.pin-button {
+  float: right;
+  display: flex;
+  align-items: center;
+  height: 28px;              /* 縦幅ちょい小さめ */
+  padding: 0 8px;
+  font-size: 13px;
+  line-height: 1;
+  margin-top: 2px;           /* 調整（必要に応じて） */
+}
+

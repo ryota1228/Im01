@@ -1,18 +1,96 @@
-<div class="home-container">
+<div class="dashboard-wrapper">
   <h1>ダッシュボード</h1>
 
-  <div class="section">
-    <h2>今日の課題</h2>
-    <p>（ここに今日締切のタスクが並びます）</p>
-  </div>
+  <div class="home-grid">
+    <!-- 左カラム -->
+    <div class="home-main">
+      <div class="section">
+        <h2>今日が期限のタスク</h2><div>現在日時：{{ currentTime | date: 'MM/dd HH:mm:ss' }}</div>
+        <div class="section-scrollable">
+        <div *ngIf="isLoading">読み込み中...</div>
+        <ul *ngIf="!isLoading && todaysTasks.length > 0">
+          <li *ngFor="let task of todaysTasks" (click)="openTask(task)">
+            {{ task.title }}（進捗率：{{ task.progress }}%）
+          </li>
+        </ul>
+        <p *ngIf="!isLoading && todaysTasks.length === 0">今日のタスクはありません</p>
+        </div>
+      </div>
 
-  <div class="section">
-    <h2>遅延課題</h2>
-    <p>（遅れているタスク）</p>
-  </div>
+      <div class="section">
+        <h2>期限超過タスク</h2>
+        <div class="section-scrollable">
+        <ul *ngIf="delayedTasks.length > 0">
+          <li *ngFor="let task of delayedTasks" (click)="openTask(task)">
+            {{ task.title }}（期限: {{ task.dueDate | date: 'MM/dd' }}）
+          </li>
+        </ul>
+        <p *ngIf="delayedTasks.length === 0">遅延しているタスクはありません</p>
+        </div>
+      </div>
 
-  <div class="section">
-    <h2>最近更新された課題</h2>
-    <p>（最近更新されたタスクのリスト）</p>
+      <div class="section">
+        <h2>参加中のプロジェクト</h2>
+        <div class="section-scrollable">
+        <ul>
+          <li *ngFor="let project of sortedProjects" (click)="goToProject(project.id)">
+            <strong>{{ project.title }}</strong>
+            （期限: {{ project.dueDate | date: 'MM/dd' }} / 遅延: {{ project.delayedCount }}件）
+            <button
+              class="pin-button"
+              [class.pinned]="project.pinned"
+              (click)="togglePin(project.id); $event.stopPropagation();"
+            >
+              <mat-icon>push_pin</mat-icon>{{ project.pinned ? '解除' : '上部に固定' }}
+            </button>
+          </li>
+        </ul>
+        
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>今週のタスク</h2>
+        <div class="section-scrollable">
+        <app-calendar-view
+          [mode]="'week'"
+          [embedded]="true"
+          [currentDate]="currentTime"
+          [userId]="uid">
+        </app-calendar-view>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右カラム -->
+    <div class="home-side">
+      <!-- <div class="section clock-attendance">
+        <h2>現在時刻と勤怠</h2>
+        <div class="section-scrollable">
+        <p>{{ currentTime | date: 'yyyy/MM/dd HH:mm:ss' }}</p>
+        <p>現在のステータス: {{ attendanceStatus }}</p>
+        <div class="attendance-buttons">
+          <button (click)="setAttendance('出勤')" [disabled]="attendanceStatus === '出勤'">出勤</button>
+          <button (click)="setAttendance('退勤')" [disabled]="attendanceStatus === '退勤'">退勤</button>
+          <button (click)="setAttendance('休憩')" [disabled]="attendanceStatus === '休憩'">休憩</button>
+          <button (click)="setAttendance('出勤')" [disabled]="attendanceStatus === '出勤'">復帰</button>
+        </div>
+        </div>
+      </div> -->
+
+      <div class="notification-preview">
+        <h2>通知</h2>
+        <div class="section-scrollable">
+        <div *ngIf="notifications.length === 0">通知はまだありません</div>
+        <ul>
+          <li *ngFor="let n of notifications | slice:0:5" (click)="onClickNotification(n)">
+            <strong>{{ n.taskName }}</strong>（{{ n.type }}）
+            <span *ngIf="!n.isRead">🟠 未読</span>
+          </li>
+        </ul>
+        <button (click)="goToAllNotifications()">すべて表示</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

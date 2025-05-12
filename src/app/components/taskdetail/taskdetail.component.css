@@ -81,6 +81,17 @@
   resize: vertical;
 }
 
+.form-group.file-list-wrapper {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.file-list-wrapper label {
+  width: auto;
+  padding-top: 0;
+  margin-bottom: 4px;
+}
+
 /* ====================
    Rich Text Editor
 ==================== */
@@ -433,27 +444,19 @@
   margin-top: 4px;
 }
 
-
+/* ====================
+   Quill z-index Fixes
+==================== */
 .quill-wrapper,
 .ql-toolbar,
 .ql-container {
-  position: relative;  /* ← 相対位置にすることで子の absolute z-index が効く */
+  position: relative;
   z-index: 10;
 }
 
 .ql-toolbar .ql-picker {
-  z-index: 1000; /* ドロップダウンの表示優先順位を上げる */
+  z-index: 1000;
 }
-
-/* Quillの親コンテナを相対位置に */
-.quill-wrapper,
-.ql-toolbar {
-  position: relative;
-  z-index: 1; /* 任意（他と衝突しないように） */
-}
-
-/* セレクトドロップダウン（選択肢部分）を最前面に出す */
-/* Quillのドロップダウン選択肢を最前面に出す */
 
 .ql-toolbar {
   position: relative;
@@ -465,113 +468,83 @@
   z-index: 99999 !important;
   background: white;
   border: 1px solid #ccc;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* ====================
+   File Upload Area
+==================== */
 input[type="file"] {
   display: none;
 }
 
-.file-upload-label {
-  display: inline-block;
-  padding: 6px 12px;
-  font-size: 14px;
-  font-weight: bold;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: #fff;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.file-upload-label:hover {
-  background-color: #f0f0f0;
-}
-
-.file-upload-group {
+.upload-controls {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 60%;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
 }
 
 .upload-button {
-  display: inline-block;
-  padding: 6px 12px;
   background-color: #1976d2;
   color: white;
+  padding: 4px 10px;
   border-radius: 4px;
-  font-size: 14px;
   cursor: pointer;
+  font-size: 13px;
   font-weight: bold;
 }
 
-.attached-file-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-width: 100%;
+.upload-action {
+  background-color: #4caf50;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
 }
 
-.attached-file-item {
+.uploaded-file-list {
+  list-style: none;
+  padding-left: 12px;
+  margin: 6px 0 0 0;
+}
+
+.uploaded-file-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   background: #f8f8f8;
-  border-radius: 6px;
   padding: 6px 10px;
+  border-radius: 4px;
+  margin-bottom: 4px;
   max-width: 100%;
-  box-sizing: border-box;
-}
-
-.attached-file-name {
-  flex: 1 1 auto;
-  min-width: 0; /* ← これが重要！ */
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.attached-file-remove {
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  color: #d32f2f;
-  cursor: pointer;
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: #f5f5f5;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.file-icon {
-  font-size: 16px;
 }
 
 .file-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   flex: 1 1 auto;
-  min-width: 0;
-  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-
-.file-remove-button {
-  background: none;
-  border: none;
-  color: #888;
+.download-link {
+  margin-left: 6px;
+  text-decoration: none;
   font-size: 16px;
-  cursor: pointer;
+  flex-shrink: 0;
 }
 
+.delete-file-button {
+  margin-left: 4px;
+  background: transparent;
+  border: none;
+  color: red;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  flex-shrink: 0;
+}

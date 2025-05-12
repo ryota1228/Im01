@@ -1,4 +1,3 @@
-import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
@@ -11,18 +10,21 @@ import { Task } from '../../models/task.model';
 import { TaskPanelService } from '../../services/task-panel.service';
 import { CreateProjectDialogComponent } from '../create-project-dialog/create-project-dialog.component';
 import { MatIconModule } from '@angular/material/icon';
-import { FirestoreService } from '../../services/firestore.service';
 import { Project } from '../../models/project.model';
 import { RouterModule } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { FirestoreService } from '../../services/firestore.service';
+import { Notification } from '../../models/notification.model';
+import { NotificationListComponent } from '../notification-list/notification-list.component';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, MatDialogModule, MatButtonModule, MatIconModule, RouterModule],
+  imports: [RouterOutlet, CommonModule, MatDialogModule, MatButtonModule, MatIconModule, RouterModule, NotificationListComponent],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.css']
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit {
   sidebarOpen = true;
   user$;
   selectedTask: Task | null = null;
@@ -32,6 +34,8 @@ export class LayoutComponent {
   displayName: string = '';
   projects: Project[] = [];
   isProjectListOpen = false;
+  showNotifications = false;
+  hasUnread = false;
 
   constructor(
     private authService: AuthService,
@@ -48,20 +52,28 @@ export class LayoutComponent {
     this.taskPanelService.selectedTask$.subscribe(task => this.selectedTask = task);
     this.taskPanelService.projectId$.subscribe(id => this.projectId = id);
     this.taskPanelService.isOpen$.subscribe(open => this.isTaskPanelOpen = open);
-  
+
     this.authService.currentUser$.subscribe(async user => {
       if (user?.uid) {
         const data = await this.firestoreService.getUserById(user.uid);
         this.displayName = data?.displayName ?? '';
 
-        this.firestoreService.getProjectsByUser(user.uid).subscribe(projects => {
-          const filtered = projects.filter(p => p.status !== 'completed');
-          console.log('表示対象のプロジェクト:', filtered);
-          this.joinedProjects = filtered;
-        });        
+        
+
+        const projects = await this.firestoreService.getProjectsByUser([user.uid]);
+        const filtered = projects.filter(p => p.status !== 'completed');
+        console.log('表示対象のプロジェクト', filtered);
+        this.joinedProjects = filtered;
+
+        const notifications = await this.firestoreService.getNotifications(user.uid);
+        this.hasUnread = notifications.some(n => !n.isRead);
       }
     });
-  }  
+  }
+
+  toggleNotifications(): void {
+    this.showNotifications = !this.showNotifications;
+  }
 
   toggleSidebar() {
     this.sidebarOpen = !this.sidebarOpen;

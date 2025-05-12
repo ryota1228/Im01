@@ -1,0 +1,21 @@
+.notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .notification-item {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+  }
+  
+  .notification-item.unread {
+    background-color: #e3f2fd;
+    font-weight: bold;
+  }
+  
+  .badge {
+    color: red;
+    margin-left: 8px;
+  }
+  

@@ -1,0 +1,63 @@
+<h2>通知設定</h2>
+
+<div>
+  <label>新規タスク:</label>
+  <select [(ngModel)]="settings.newTask">
+    <option value="all">すべて通知</option>
+    <option value="assigned">自分のタスクのみ</option>
+    <option value="none">通知しない</option>
+  </select>
+</div>
+
+<div>
+  <label>更新通知:</label>
+  <select [(ngModel)]="settings.taskUpdate">
+    <option value="all">すべて通知</option>
+    <option value="assigned">自分のタスクのみ</option>
+    <option value="none">通知しない</option>
+  </select>
+</div>
+
+<div>
+  <label>コメント通知:</label>
+  <select [(ngModel)]="settings.comment">
+    <option value="all">すべて通知</option>
+    <option value="assigned">自分のタスクのみ</option>
+    <option value="none">通知しない</option>
+  </select>
+</div>
+
+<div>
+  <label>期日通知の○日前:</label>
+  <input type="number" [(ngModel)]="settings.deadline.daysBefore" min="1" />
+  <input type="checkbox" [(ngModel)]="settings.deadline.enabled" /> 有効
+</div>
+
+<div>
+  <label>達成感通知:</label>
+  <input type="checkbox" [(ngModel)]="settings.progress" />
+</div>
+
+<hr />
+
+<h3>外部通知</h3>
+
+<div>
+  <label>デスクトップ通知:</label>
+  <input type="checkbox" [(ngModel)]="settings.external.desktop" />
+</div>
+
+<div>
+  <label>メール通知:</label>
+  <input type="checkbox" [(ngModel)]="settings.external.email" />
+</div>
+
+<div>
+  <label>Slack通知:</label>
+  <input type="checkbox" [(ngModel)]="settings.external.slack" />
+</div>
+
+<div class="actions">
+  <button (click)="cancel()">キャンセル</button>
+  <button (click)="save()">保存</button>
+</div>

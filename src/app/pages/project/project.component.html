@@ -10,8 +10,10 @@
       />
   
       <div class="view-switch-group">
-        <button class="view-button" [class.active]="currentView === 'list'" (click)="switchView('list')"><span class="material-icons">view_list</span>一覧表示</button>
-        <button class="view-button" [class.active]="currentView === 'calendar'" (click)="switchView('calendar')"><span class="material-icons">calendar_today</span>カレンダー表示</button>
+        <div class="view-toggle-group">
+          <button class="view-button" [class.active]="currentView === 'list'" (click)="switchView('list')"><span class="material-icons">view_list</span>一覧表示</button>
+          <button class="view-button" [class.active]="currentView === 'calendar'" (click)="switchView('calendar')"><span class="material-icons">calendar_today</span>カレンダー表示</button>
+        </div>
         <button class="member-button" (click)="openMemberDialog()" [disabled]="userRole === 'viewer'"><span class="material-icons">group</span>メンバー管理</button>
         <button class="complete-project-button" (click)="completeProject()" [disabled]="userRole === 'viewer'"><span class="material-icons">checklist_rtl</span>プロジェクト完了</button>
       </div>
@@ -24,8 +26,6 @@
       <input type="text" [(ngModel)]="searchKeyword" class="search-input" placeholder="タイトル・担当者で検索" />
       <button class="control-button" (click)="sortDialogOpen()"><span class="material-icons">swap_vert</span>ソート</button>
       <button class="control-button" (click)="filterDialogOpen()"><span class="material-icons">filter_alt</span>フィルター</button>
-      <button class="control-button" (click)="addSectionDialogOpen()" [disabled]="userRole === 'viewer'"><span class="material-icons">add</span>セクション追加</button>
-      
 
       <div class="auto-move-wrapper">
         <label class="auto-move-toggle">
@@ -33,7 +33,12 @@
           <span class="toggle-switch"></span>
           <span class="toggle-label">完了タスクを自動で完了済セクションに移動</span>
         </label>
-      </div>      
+      </div>
+
+
+      <button class="add-section-button" (click)="addSectionDialogOpen()" [disabled]="userRole === 'viewer'">
+        <span class="material-icons">add</span>セクション追加
+      </button>
     </div>
   </div>
 
@@ -115,7 +120,7 @@
                 <span class="material-icons">add</span>新規タスク追加
               </button>
             
-              <!-- ✅ マイルストーン追加ボタン（同スタイル） -->
+
               <button
                 *ngIf="entry.section.title === '目標・マイルストーン' && userRole !== 'viewer'"
                 (click)="createMilestone(entry.section.id)"
@@ -145,12 +150,7 @@
                 {{ member.displayName }}
               </option>
             </select>
-            <!-- <select [(ngModel)]="newTask.parentMilestoneId">
-              <option value="">-マイルストーン未設定-</option>
-              <option *ngFor="let ms of allMilestones" [value]="ms.id">
-                {{ ms.title }}
-              </option>
-            </select> -->
+
             <input type="date" [(ngModel)]="newTask.dueDate" />
             <button (click)="saveTask()">保存</button>
             <button (click)="cancelAddTask()">キャンセル</button>
@@ -159,11 +159,12 @@
           <ng-container *ngIf="!isSectionCollapsed(entry.section.title)">
 
             <div *ngIf="entry.section.title === '目標・マイルストーン'">
+
               <!-- 目標カード -->
-<div class="goal-card">
+<div class="goal-card" (click)="editingGoal = true" [class.editing]="editingGoal">
 
   <!-- 編集モード -->
-  <div *ngIf="editingGoal; else goalStaticBlock" class="add-task-form">
+  <div *ngIf="editingGoal; else goalStaticBlock" class="add-task-form" (click)="$event.stopPropagation()">
     <input
       type="text"
       [(ngModel)]="newGoalTitle"
@@ -176,31 +177,33 @@
     <button (click)="saveGoal()">保存</button>
     <button (click)="cancelEditGoal()">キャンセル</button>
     <div class="goal-delete-placeholder"></div>
-    
   </div>
 
   <!-- 表示モード -->
   <ng-template #goalStaticBlock>
-    <div class="task-title" (click)="editingGoal = true">
-      🎯 {{ entry.goal?.title ?? '目標' }}
+    <div class="task-title">
+      <mat-icon>flag</mat-icon>{{ entry.goal?.title ?? '目標' }}
     </div>
     <span class="meta-item dueDate">期日: {{ entry.goal?.dueDate }}</span>
-    <div class="task-meta-horizontal">
-      
-      <!-- <span class="meta-separator">｜</span>
-      <span class="meta-item progress">進捗率: {{ entry.goal?.progress ?? 0 }}%</span> -->
-    </div>
+    <div class="task-meta-horizontal"></div>
     <span class="meta-item progress">進捗率:</span>
     <div class="progress-bar-container">
       <div class="progress-bar-fill" [style.width.%]="entry.goal?.progress ?? 0"></div>
     </div>
   </ng-template>
-
 </div>
 
-              <!-- マイルストーンカード -->
-<div *ngFor="let ms of entry.milestones" class="milestone-card"  [class.completed]="ms.status === '完了'">
-  <div *ngIf="editingMilestoneId === ms.id; else staticMilestone" class="add-task-form">
+<!-- マイルストーンカード -->
+<div
+  *ngFor="let ms of entry.milestones"
+  class="milestone-card"
+  [class.completed]="ms.status === '完了'"
+  [class.editing]="editingMilestoneId === ms.id"
+  (click)="startEditMilestone(ms)"
+>
+
+  <!-- 編集モード -->
+  <div *ngIf="editingMilestoneId === ms.id" class="add-task-form" (click)="$event.stopPropagation()">
     <input
       type="text"
       [(ngModel)]="newMilestoneTitle"
@@ -217,23 +220,17 @@
     </button>
   </div>
 
-  <ng-template #staticMilestone>
-    <div class="task-title" (click)="startEditMilestone(ms)">
-      📌 {{ ms.title ?? 'マイルストーン' }}
+  <!-- 表示モード -->
+  <ng-template [ngIf]="editingMilestoneId !== ms.id">
+    <div class="task-title">
+      <mat-icon>push_pin</mat-icon>{{ ms.title }}
     </div>
     <div class="task-meta-horizontal">
       <span class="meta-item dueDate">期日: {{ ms.dueDate }}</span>
-      <!-- <span class="meta-separator">｜</span>
-      <span class="meta-item progress">進捗率: {{ ms.progress }}%</span> -->
     </div>
-<!-- 
-    <span class="meta-item progress">進捗率:</span>
-    <div class="progress-bar-container">
-      <div class="progress-bar-fill" [style.width.%]="ms.progress"></div>
-    </div> -->
   </ng-template>
-</div>
 
+</div>
 
 
             </div>

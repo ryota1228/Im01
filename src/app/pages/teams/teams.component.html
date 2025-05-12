@@ -1,3 +1,105 @@
-<div class="teams-container">
-  <h1>チーム一覧</h1>
+<div class="team-container">
+  <h2>チーム管理</h2>
+
+  <!-- 新規作成 -->
+  <div class="new-team">
+    <input [(ngModel)]="newTeamName" placeholder="新規チーム名を入力" />
+    <button (click)="createTeam()">作成</button>
+  </div>
+
+  <!-- 検索 + ソート + 展開操作 -->
+  <div class="team-controls">
+    <input [(ngModel)]="searchKeyword" placeholder="チーム名で検索" />
+    <select [(ngModel)]="sortOption">
+      <option value="name">名前順</option>
+      <option value="createdAt">作成日順</option>
+    </select>
+    <button (click)="expandAll()">すべて展開</button>
+    <button (click)="collapseAll()">すべて折りたたむ</button>
+  </div>
+
+  <!-- チーム一覧 -->
+  <div class="team-list">
+    <div *ngFor="let team of sortedTeams" class="team-card">
+      
+      <!-- 編集中でない場合 -->
+      <div *ngIf="editingTeamId !== team.id">
+        <div class="team-header">
+          <div class="team-title">{{ team.name }}</div>
+          <div class="team-actions">
+            <button class="btn-toggle" (click)="toggle(team.id)">
+              {{ isExpanded[team.id] ? '▲ 閉じる' : '▼ 開く' }}
+            </button>
+            <button class="btn-edit" (click)="startEditing(team)">編集</button>
+            <button class="btn-danger" (click)="deleteTeam(team.id)">削除</button>
+          </div>
+        </div>
+
+        <!-- 開いたときの中身 -->
+        <div *ngIf="isExpanded[team.id]" class="team-body">
+
+          <!-- 📂 参加プロジェクト -->
+          <div class="section">
+            <div class="section-title">
+              <span class="label">
+                <span class="material-icons">folder</span>
+                参加プロジェクト
+              </span>
+            </div>
+            <div class="section-actions"></div>
+            <div class="section-body">
+              <ng-container *ngIf="team.projects && team.projects.length > 0; else noProjects">
+                <ul>
+                  <li *ngFor="let p of team.projects">
+                    <span class="material-icons">chevron_right</span>
+                    <a [routerLink]="['/project', p.id]" *ngIf="isCurrentUserMember(p)">
+                      {{ p.title }}
+                    </a>
+                    <span *ngIf="!isCurrentUserMember(p)" class="text-muted">
+                      {{ p.title }}
+                    </span>
+                  </li>
+                </ul>
+              </ng-container>
+              <ng-template #noProjects>
+                <p class="text-muted">参加プロジェクトはありません</p>
+              </ng-template>
+            </div>
+          </div>
+
+          <!-- 👥 メンバー一覧 -->
+          <div class="section">
+            <div class="section-title">
+              <span class="label">
+                <span class="material-icons">group</span>
+                メンバー一覧
+              </span>
+              <button class="btn-secondary" (click)="openMemberSelectDialog(team.id)">＋ メンバー追加</button>
+            </div>
+            <div class="section-actions"></div>
+            <app-team-member-list [teamId]="team.id"></app-team-member-list>
+          </div>          
+
+          <!-- ✅ タスク実績 -->
+          <div class="section">
+            <div class="section-title no-actions">
+              <span class="label">
+                <span class="material-icons">check_circle</span>
+                タスク実績
+              </span>
+            </div>
+            <app-team-task-summary [teamId]="team.id"></app-team-task-summary>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 編集モード -->
+      <div *ngIf="editingTeamId === team.id" class="edit-form">
+        <input [(ngModel)]="editedTeamName" />
+        <button (click)="saveEdit(team.id)">保存</button>
+        <button (click)="cancelEdit()">キャンセル</button>
+      </div>
+    </div>
+  </div>
 </div>

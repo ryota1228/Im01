@@ -1,0 +1,48 @@
+.task-summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 14px;
+  }
+  
+  .task-summary-table th,
+  .task-summary-table td {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .task-summary-table th {
+    background-color: #f4f4f4;
+    font-weight: 600;
+  }
+  
+  .task-summary-table th:nth-child(1),
+  .task-summary-table td:nth-child(1) { width: 20%; }  /* タスク名 */
+  .task-summary-table th:nth-child(2),
+  .task-summary-table td:nth-child(2) { width: 12%; }  /* 担当者 */
+  .task-summary-table th:nth-child(3),
+  .task-summary-table td:nth-child(3) { width: 12%; }  /* 期日 */
+  .task-summary-table th:nth-child(4),
+  .task-summary-table td:nth-child(4) { width: 10%; }  /* ステータス */
+  .task-summary-table th:nth-child(5),
+  .task-summary-table td:nth-child(5) { width: 10%; }  /* 進捗率 */
+  .task-summary-table th:nth-child(6),
+  .task-summary-table td:nth-child(6) { width: 16%; }  /* プロジェクト */
+  .task-summary-table th:nth-child(7),
+  .task-summary-table td:nth-child(7) { width: 10%; }  /* 見積もり */
+  .task-summary-table th:nth-child(8),
+  .task-summary-table td:nth-child(8) { width: 10%; }  /* 実績 */
+  
+  .task-title-button {
+    background: none;
+    border: none;
+    color: #1976d2;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 14px;
+  }
+  

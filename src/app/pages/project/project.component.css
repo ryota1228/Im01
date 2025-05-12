@@ -1216,3 +1216,57 @@
   text-decoration: line-through;
 }
 
+.view-toggle-group {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 6px 12px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  background-color: #f9f9f9;
+}
+
+.goal-card {
+  cursor: pointer;
+}
+
+.goal-card.editing {
+  cursor: default;
+}
+
+.milestone-card {
+  cursor: pointer;
+}
+
+.milestone-card.editing {
+  cursor: default;
+}
+
+.task-title mat-icon {
+  vertical-align: middle;
+  margin-right: 4px;
+  font-size: 20px;
+  color: #e0392d;
+}
+
+.add-section-button {
+  background-color: #ffffff;
+  color: #1976d2;
+  border: 1px solid #1976d2;
+  padding: 6px 12px;
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.add-section-button:hover {
+  background-color: #1976d2;
+  color: white;
+}
+
+

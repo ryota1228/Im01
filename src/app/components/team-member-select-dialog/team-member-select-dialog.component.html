@@ -1,0 +1,12 @@
+<h2>メンバーを選択</h2>
+
+<input [(ngModel)]="search" placeholder="ユーザー名またはメールアドレスで検索" />
+
+<div *ngFor="let user of filteredUsers">
+  <mat-checkbox [(ngModel)]="user.checked">{{ user.displayName }} ({{ user.email }})</mat-checkbox>
+</div>
+
+<div class="actions">
+  <button mat-button (click)="cancel()">キャンセル</button>
+  <button mat-raised-button color="primary" (click)="apply()">追加</button>
+</div>

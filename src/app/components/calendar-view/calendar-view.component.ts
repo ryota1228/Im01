@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, subMonths, addMonths } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, subMonths, addMonths } from 'date-fns';
 import { Task } from '../../models/task.model';
 import { FirestoreService } from '../../services/firestore.service';
 import { TaskPanelService } from '../../services/task-panel.service';
@@ -27,8 +27,11 @@ export class CalendarSyncService {
   styleUrls: ['./calendar-view.component.css']
 })
 export class CalendarViewComponent implements OnInit, OnChanges {
-  @Input() projectId!: string | null;
-  @Input() currentDate!: Date;
+  @Input() projectId?: string | null;
+  @Input() userId?: string | null;
+  @Input() currentDate: Date = new Date();
+  @Input() mode: 'week' | 'month' = 'month';
+  @Input() embedded: boolean = false;
   @Output() estimateTotalChange = new EventEmitter<number>();
   @Output() actualTotalChange = new EventEmitter<number>();
   @Output() estimateUntilNowChange = new EventEmitter<number>();
@@ -43,7 +46,7 @@ export class CalendarViewComponent implements OnInit, OnChanges {
   taskMap: { [date: string]: Task[] } = {};
   tasks: Task[] = [];
   dropListIds: string[] = [];
-  // monthlyCompletionRateChange = new EventEmitter<number>();
+
 
   constructor(
     private firestoreService: FirestoreService,
@@ -65,25 +68,47 @@ export class CalendarViewComponent implements OnInit, OnChanges {
   }
 
   async generateCalendar(): Promise<void> {
-    const start = startOfMonth(this.currentDate);
-    const end = endOfMonth(this.currentDate);
+    let start: Date;
+    let end: Date;
+  
+
+    if (this.mode === 'week') {
+      start = startOfWeek(this.currentDate, { weekStartsOn: 1 });
+      end = endOfWeek(this.currentDate, { weekStartsOn: 1 });
+    } else {
+      start = startOfMonth(this.currentDate);
+      end = endOfMonth(this.currentDate);
+    }
+  
     this.daysInMonth = eachDayOfInterval({ start, end });
 
-    const tasks = await this.firestoreService.getTasksByProjectIdOnce(this.projectId ?? '');
+    let tasks: Task[] = [];
+  
+    if (this.projectId) {
+      tasks = await this.firestoreService.getTasksByProjectIdOnce(this.projectId);
+    } else if (this.userId) {
+      tasks = await this.firestoreService.getAllTasksByUserOnce(this.userId);
+    } else {
+      console.warn('[Calendar] projectId も userId も指定されていません。');
+      this.taskMap = {};
+      return;
+    }
+  
     this.taskMap = {};
+  
     for (const task of tasks) {
       if (!task.dueDate) continue;
-
+  
       if (typeof task.dueDate['toDate'] === 'function') {
         task.dueDate = task.dueDate.toDate();
       }
-
+  
       const d = task.dueDate as Date;
       const key = format(d, 'yyyy-MM-dd');
       if (!this.taskMap[key]) this.taskMap[key] = [];
       this.taskMap[key].push(task);
     }
-
+  
     this.updateSums();
     this.emitCurrentMonthLabel();
     this.dropListIds = this.daysInMonth.map(d => 'dropList-' + format(d, 'yyyy-MM-dd'));
@@ -153,7 +178,9 @@ export class CalendarViewComponent implements OnInit, OnChanges {
   }
 
   openTaskPanel(task: Task): void {
-    this.taskPanelService.openPanel(task, this.projectId ?? '');
+    if (!task.projectId || !task.id) return;
+  
+    this.taskPanelService.open(task.projectId, task.id);
   }
 
   async onTaskDrop(event: CdkDragDrop<Task[]>, date: Date): Promise<void> {
@@ -184,4 +211,5 @@ export class CalendarViewComponent implements OnInit, OnChanges {
     this.currentDate = new Date();
     this.generateCalendar();
   }
+
 }

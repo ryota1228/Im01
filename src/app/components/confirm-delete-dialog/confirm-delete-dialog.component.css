@@ -1,23 +1,57 @@
-.dialog-wrapper {
-    padding: 24px;
-    width: 320px;
-  }
-  
-  .dialog-title {
-    margin-bottom: 12px;
-    font-size: 18px;
-    font-weight: bold;
-  }
-  
-  .dialog-content {
-    font-size: 14px;
-    margin-bottom: 20px;
-    color: #333;
-  }
-  
-  .dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-  }
-  
+.delete-section-dialog {
+  font-family: "Segoe UI", sans-serif;
+}
+
+
+.delete-section-dialog-title {
+  font-size: 18px;
+  font-weight: bold;
+  padding: 24px 24px 0 24px;
+  margin: 0;
+  color: #222;
+}
+
+
+.delete-section-dialog-description {
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 16px;
+  padding: 0 24px;
+}
+
+
+.delete-section-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px 24px 24px;
+}
+
+
+.delete-section-dialog-actions button {
+  min-width: 90px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 6px 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: none !important;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.delete-section-dialog-cancel {
+  background-color: #f1f1f1;
+  color: #555;
+}
+
+.delete-section-dialog-cancel:hover {
+  background-color: #e0e0e0;
+}
+
+.delete-section-dialog-confirm {
+  background-color: #d32f2f;
+  color: #fff;
+}
+
+.delete-section-dialog-confirm:hover {
+  background-color: #b71c1c;
+}

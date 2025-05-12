@@ -17,6 +17,19 @@
 
   <div class="body-row">
     <aside class="sidebar" [class.closed]="!sidebarOpen">
+
+      <div class="sidebar-top">
+        <div class="notification-icon" (click)="toggleNotifications()">
+          <span class="material-icons">notifications</span>
+          <span *ngIf="hasUnread" class="badge">●</span>
+        </div>
+      </div>
+      
+      <!-- 🔽 通知リスト（トグル表示） -->
+      <div *ngIf="showNotifications" class="notification-panel">
+        <app-notification-list></app-notification-list>
+      </div>
+
       <div class="sidebar-content">
         <div class="sidebar-menu-list">
     
@@ -27,14 +40,6 @@
 
             <span>ホーム</span>
           </a>
-    
-          <!-- <a href="['/project', project.id]" class="sidebar-link">
-            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: white; display: inline-block; vertical-align: middle; padding-right: 8px;">
-              <path d="M3 5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>
-            </svg>
-
-            <span>プロジェクト</span>
-          </a> -->
 
           <a href="/teams" class="sidebar-link">
             <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: white; display: inline-block; vertical-align: middle; padding-right: 8px;">
@@ -47,41 +52,7 @@
             <span>チーム</span>
           </a>
     
-          <!-- <div href="#!" class="sidebar-link" (click)="toggleSection('insight')">
-            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: white; display: inline-block; vertical-align: middle; padding-right: 8px;">
-              <path d="M8 5l8 7-8 7z" *ngIf="openedSection !== 'insight'" />
-              <path d="M5 8l7 8 7-8z" *ngIf="openedSection === 'insight'" />
-            </svg>
-
-            <span>プロジェクト</span>
-          </div> -->
-    
         </div>
-
-       
-    
-        <!-- <div *ngIf="openedSection === 'insight'" class="sidebar-menu-list accordion-body">
-          <a href="project/sample-project" class="sidebar-link sidebar-sub">
-            サンプルPJ1
-          </a>
-
-          <a href="/project/WMKCEuI3Tmj2QrvPUk2s" class="sidebar-link sidebar-sub">
-            サンプルPJ2
-          </a>
-
-          <a href="/project/kzD9sqOxq0irinUmfKIi" class="sidebar-link sidebar-sub">
-            サンプルPJ3
-          </a>
-
-          <a
-              *ngFor="let project of joinedProjects"
-              href="/project/{{ project.id }}"
-              class="sidebar-link sidebar-sub"
-            >
-              {{ project.title }}
-            </a>
-
-        </div> -->
       </div>
 
       <div class="sidebar-link" (click)="toggleProjectList()">

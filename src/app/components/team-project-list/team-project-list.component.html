@@ -1,0 +1,6 @@
+<div class="item-list">
+  <div *ngFor="let project of projects">
+    <span class="material-icons">folder</span>{{ project.title }}
+  </div>
+  <div *ngIf="projects.length === 0" class="empty">参加プロジェクトはありません</div>
+</div>

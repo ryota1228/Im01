@@ -1,0 +1,8 @@
+<div class="item-list">
+  <div *ngFor="let member of members" class="member-row">
+    <span class="material-icons">person</span>
+    <span class="email">{{ member.displayName }} ({{ member.email }})</span>
+    <button class="btn-danger small" (click)="removeMember(member.uid)">削除</button>
+  </div>
+  <div *ngIf="members.length === 0" class="empty">メンバーがいません</div>
+</div>

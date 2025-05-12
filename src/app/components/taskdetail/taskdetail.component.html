@@ -1,5 +1,4 @@
 <div class="task-detail-panel" *ngIf="task">
-  <!-- <button class="back-button" (click)="onClosePanel()">← プロジェクトに戻る</button> -->
 
   <div class="validation-error" *ngIf="validationError">
     {{ validationError }}
@@ -8,12 +7,12 @@
   <div class="form-scroll-area">
     <div class="form-group">
       <label>タイトル</label>
-      <input [(ngModel)]="task.title" type="text" [disabled]="userRole === 'viewer'" [ngClass]="{ 'input-error': !task.title }" />
+      <input [(ngModel)]="task.title" type="text" [disabled]="isViewerUser" [ngClass]="{ 'input-error': !task.title }" />
     </div>
 
     <div class="form-group">
-      <label>担当</label>
-      <select [(ngModel)]="task.assignee" [disabled]="userRole === 'viewer'">
+      <label>担当者</label>
+      <select [(ngModel)]="task.assignee" [disabled]="isViewerUser">
         <option value="">--未設定--</option>
         <option *ngFor="let member of members" [value]="member.uid">
           {{ member.displayName }}
@@ -23,12 +22,12 @@
 
     <div class="form-group">
       <label>期限</label>
-      <input type="date" [(ngModel)]="dueDateString" (ngModelChange)="onDueDateChange($event)" [disabled]="userRole === 'viewer'" [ngClass]="{ 'input-error': !task.dueDate }" />
+      <input type="date" [(ngModel)]="dueDateString" (ngModelChange)="onDueDateChange($event)" [disabled]="isViewerUser" [ngClass]="{ 'input-error': !task.dueDate }" />
     </div>
 
     <div class="form-group">
       <label>優先度</label>
-      <select [(ngModel)]="task.priority" [disabled]="userRole === 'viewer'">
+      <select [(ngModel)]="task.priority" [disabled]="isViewerUser">
         <option value="">未設定</option>
         <option value="低">低</option>
         <option value="中">中</option>
@@ -39,7 +38,7 @@
 
     <div class="form-group">
       <label>状態</label>
-      <select [(ngModel)]="task.status" [disabled]="userRole === 'viewer'">
+      <select [(ngModel)]="task.status" [disabled]="isViewerUser">
         <option value="未着手">未着手</option>
         <option value="進行中">進行中</option>
         <option value="完了">完了</option>
@@ -51,7 +50,7 @@
 
     <div class="form-group">
       <label>セクション</label>
-      <select [(ngModel)]="task.section" [disabled]="userRole === 'viewer'" [ngClass]="{ 'input-error': !task.section || task.section === '' }">
+      <select [(ngModel)]="task.section" [disabled]="isViewerUser" [ngClass]="{ 'input-error': !task.section || task.section === '' }">
         <ng-container *ngFor="let section of sections">
           <option *ngIf="section.title !== '目標・マイルストーン'" [value]="section.title">
             {{ section.title }}
@@ -61,20 +60,25 @@
     </div>
 
     <div class="form-group">
+      <label>プロジェクト</label>
+      <input type="text" [value]="projectTitle" disabled />
+    </div>
+
+    <div class="form-group">
       <label>進捗率 (%)</label>
-      <select [(ngModel)]="task.progress" [disabled]="userRole === 'viewer'">
+      <select [(ngModel)]="task.progress" [disabled]="isViewerUser">
         <option *ngFor="let p of [0,10,20,30,40,50,60,70,80,90,100]" [value]="p">{{ p }}</option>
       </select>
     </div>
 
     <div class="form-group">
       <label>見積（min）</label>
-      <input type="number" min="0" [(ngModel)]="task.estimate" [disabled]="userRole === 'viewer'" />
+      <input type="number" min="0" [(ngModel)]="task.estimate" [disabled]="isViewerUser" />
     </div>
 
     <div class="form-group">
       <label>実績（min）</label>
-      <input type="number" min="0" [(ngModel)]="task.actual" [disabled]="userRole === 'viewer'" />
+      <input type="number" min="0" [(ngModel)]="task.actual" [disabled]="isViewerUser" />
     </div>
 
     <div class="form-group rich-description" [class.focused]="isDescriptionFocused"
@@ -111,26 +115,30 @@
 
     <div class="form-group">
       <label>チャット</label>
-      <textarea [(ngModel)]="task.chat" placeholder="チャットログ" [disabled]="userRole === 'viewer'"></textarea>
+      <textarea [(ngModel)]="task.chat" placeholder="チャットログ" [disabled]="isViewerUser"></textarea>
     </div>
 
+
     <div class="form-group file-list-wrapper">
-      <label>ファイル添付</label>
-      <div class="file-upload-group">
+      <label>添付ファイル</label>
+    
+      <!-- 横並びの操作エリア -->
+      <div class="upload-controls">
         <label class="upload-button">
           ファイル選択
-          <input type="file" multiple (change)="onFileSelected($event)" hidden />
+          <input type="file" (change)="onFileSelected($event)" hidden  [disabled]="isViewerUser"/>
         </label>
-        <ul class="attached-file-list">
-          <li class="file-item" *ngFor="let file of attachedFiles">
-            <span class="file-icon">📄</span>
-            <span class="file-name" title="{{ file.name }}">{{ file.name }}</span>
-            <button (click)="removeFile(file)" class="delete-btn">削除</button>
-            <button class="file-remove-button" (click)="removeFile(file)">✕</button>
-          </li>
-        </ul>
       </div>
-    </div>
+    
+      <!-- ファイル名一覧（縦並び） -->
+      <ul class="uploaded-file-list">
+        <li *ngFor="let file of uploadedFiles" class="uploaded-file-item">
+          <a [href]="file.data" [download]="file.name" title="{{ file.name }}">{{ file.name }}</a>
+          <button class="delete-file-button" (click)="deleteFile(file.id)" [disabled]="isViewerUser">✕</button>
+        </li>
+      </ul>
+    </div>    
+
 
     <!-- 更新履歴 -->
     <div class="form-group history-toggle">
@@ -164,14 +172,12 @@
       </div>
     </div>
 
-    <div class="form-actions" *ngIf="userRole !== 'viewer'">
-
-
+    <div class="form-actions" *ngIf="!isViewerUser">
       <button mat-stroked-button color="warn" (click)="confirmDeleteDialog()">
         <span class="material-icons">delete</span> 削除
       </button>
 
-      <button mat-stroked-button color="basic" (click)="cancelEdit()">
+      <button mat-stroked-button color="basic" (click)="isBlockingDialogOpen ? null : cancelEdit()">
         <span class="material-icons">undo</span>  戻る
       </button>
 
@@ -186,31 +192,3 @@
 
   </div>
 </div>
-
-<!-- 削除ダイアログ -->
-<div class="custom-dialog-overlay" *ngIf="isConfirmingDelete">
-  <div class="custom-dialog">
-    <h3 class="dialog-title">「{{ task.title }}」を削除しますか？</h3>
-    <p class="dialog-message">この操作は取り消せません。</p>
-    <div class="dialog-actions">
-      <button class="custom-button cancel-button" (click)="cancelDelete()">キャンセル</button>
-      <button class="custom-button delete-button" (click)="confirmDelete()">削除する</button>
-    </div>
-  </div>
-</div>
-
-<!-- 複製ダイアログ -->
-<div class="custom-dialog-overlay" *ngIf="isDuplicatingTask">
-  <div class="custom-dialog">
-    <h3 class="dialog-title">「{{ task.title }}」の複製</h3>
-    <p class="dialog-message">コピー先セクション</p>
-    <select class="dialog-select" [(ngModel)]="selectedCopyTarget">
-      <option *ngFor="let section of sections" [value]="section.id">{{ section.title }}</option>
-    </select>
-    <div class="dialog-actions">
-      <button class="custom-button cancel-button" (click)="cancelDuplicate()">キャンセル</button>
-      <button class="custom-button confirm-button" [disabled]="!selectedCopyTarget" (click)="confirmDuplicate()">複製</button>
-    </div>
-  </div>
-</div>
-

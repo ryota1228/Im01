@@ -6,9 +6,14 @@ import { UserRole } from '../models/user-role.model';
 @Injectable({ providedIn: 'root' })
 export class TaskPanelService {
   close: any;
-  open(task: Task, projectId: string) {
-    throw new Error('Method not implemented.');
+
+  open(projectId: string, taskId: string) {
+    this.projectIdSubject.next(projectId);
+    this.selectedTaskSubject.next({ id: taskId } as Task);
+    this.isOpenSubject.next(true);
   }
+  
+
   private selectedTaskSubject = new BehaviorSubject<Task | null>(null);
   private projectIdSubject = new BehaviorSubject<string | null>(null);
   private isOpenSubject = new BehaviorSubject<boolean>(false);
@@ -18,6 +23,7 @@ export class TaskPanelService {
   selectedTask$ = this.selectedTaskSubject.asObservable();
   projectId$ = this.projectIdSubject.asObservable();
   isOpen$ = this.isOpenSubject.asObservable();
+  private allTasks: Task[] = [];
 
   openPanel(task: Task, projectId: string) {
     this.selectedTaskSubject.next(task);
@@ -35,4 +41,11 @@ export class TaskPanelService {
     this.userRoleSubject.next(role);
   }
 
+  setAvailableTasks(tasks: Task[]) {
+    this.allTasks = tasks;
+  }
+  
+  getTaskById(id: string): Task | undefined {
+    return this.allTasks.find(t => t.id === id);
+  }
 }

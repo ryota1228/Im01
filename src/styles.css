@@ -59,18 +59,15 @@ html, body {
   z-index: 5000;
 }
 
-/* ダイアログ全体を最前面に配置 */
 .confirm-delete-dialog-overlay {
   z-index: 10000 !important;
 }
 
-/* ダイアログの中身をさらに上に */
 .confirm-delete-dialog-overlay .mat-dialog-container {
   z-index: 10001 !important;
-  position: relative; /* fixed を避けることでMaterialの位置計算と干渉しない */
+  position: relative;
 }
 
-/* 削除確認ダイアログ用のスタイル */
 .dialog-wrapper {
   text-align: center;
   padding: 24px;
@@ -110,3 +107,15 @@ button {
 }
 
 
+.cdk-overlay-container {
+  pointer-events: none;
+}
+
+.cdk-global-overlay-wrapper {
+  pointer-events: auto;
+}
+
+.dialog-block-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}

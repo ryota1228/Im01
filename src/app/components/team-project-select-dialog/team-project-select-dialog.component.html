@@ -1,0 +1,12 @@
+<h2>プロジェクトを選択</h2>
+
+<input [(ngModel)]="search" placeholder="プロジェクト名で検索" />
+
+<div *ngFor="let project of filteredProjects">
+  <mat-checkbox [(ngModel)]="project.checked">{{ project.name }}</mat-checkbox>
+</div>
+
+<div class="actions">
+  <button mat-button (click)="cancel()">キャンセル</button>
+  <button mat-raised-button color="primary" (click)="apply()">追加</button>
+</div>

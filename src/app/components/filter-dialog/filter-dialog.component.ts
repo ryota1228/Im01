@@ -113,6 +113,8 @@ export class FilterDialogComponent implements OnInit {
     this.selectedStatusesMap = {};
     this.selectedAssigneesMap = {};
     this.selectedPrioritiesMap = {};
+    this.estimateLessThanActualOnly = false;
+    this.overdueOnly = false;
   }
   
   onCancel(): void {

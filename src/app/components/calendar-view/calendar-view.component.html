@@ -1,7 +1,7 @@
 <div class="calendar-view-wrapper">
     <div class="calendar-grid">
       <div class="calendar-header-cell" *ngFor="let day of daysInMonth | slice:0:7">
-        {{ day | date:'EEE' }}
+        {{ day | date: 'EEE' }}
       </div>
   
       <div
@@ -11,13 +11,12 @@
       cdkDropList
       [cdkDropListData]="getTasksForDate(day)"
       [cdkDropListConnectedTo]="dropListIds"
-      (cdkDropListDropped)="onTaskDrop($event, day)"
->
-
+      (cdkDropListDropped)="onTaskDrop($event, day)">
 
       <div class="calendar-date">
         {{ day | date:'d' }}
         <button
+          *ngIf="mode !== 'week'"
           class="add-task-button"
           (click)="$event.stopPropagation(); openNewTask(day)"
         >＋</button>

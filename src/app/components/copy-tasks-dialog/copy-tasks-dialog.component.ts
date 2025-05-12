@@ -25,12 +25,14 @@ import { FormsModule } from '@angular/forms';
 export class CopyTasksDialogComponent {
   selectedSectionId: string | null = null;
   sections: Section[] = [];
+  taskTitle: string = '';
 
   constructor(
     private dialogRef: MatDialogRef<CopyTasksDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { sections: Section[] }
+    @Inject(MAT_DIALOG_DATA) public data: { sections: Section[], taskTitle: string }
   ) {
     this.sections = data.sections;
+    this.taskTitle = data.taskTitle;
   }
 
   onConfirm() {
