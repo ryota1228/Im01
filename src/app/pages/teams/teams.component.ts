@@ -108,17 +108,25 @@ export class TeamsComponent implements OnInit {
     this.teams = await Promise.all(
       rawTeams.map(async team => {
         const memberIds = team.memberIds || [];
-
-        console.log(`[DEBUG] チーム: ${team.name} のメンバー`, memberIds);
-
-        const projectList = await this.firestoreService.getProjectsByUsers(memberIds);
-
-        console.log(`[DEBUG] チーム: ${team.name} のプロジェクト`, projectList);
-
-        return { ...team, projects: projectList };
+  
+        const allProjects = await this.firestoreService.getProjectsByUsers(memberIds);
+  
+        const filteredProjects = allProjects.filter(project => {
+          const projectMemberIds = project.memberIds ?? [];
+          const stillHasTeamMember = memberIds.some(uid => projectMemberIds.includes(uid));
+          const isNotCompleted = project.status !== 'completed';
+          return stillHasTeamMember && isNotCompleted;
+        });
+  
+        return { ...team, projects: filteredProjects };
       })
     );
-  }  
+  }
+  
+  
+  
+  
+  
 
   toggle(teamId: string) {
     this.isExpanded[teamId] = !this.isExpanded[teamId];

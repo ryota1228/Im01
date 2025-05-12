@@ -8,6 +8,8 @@ import { ViewEncapsulation } from '@angular/core';
 import { ViewChild } from '@angular/core';
 import { CalendarViewComponent } from './components/calendar-view/calendar-view.component';
 import { UserRole } from './models/user-role.model';
+import { AuthService } from './services/auth.service';
+import { FirestoreService } from './services/firestore.service';
 
 @Component({
   selector: 'app-root',
@@ -30,19 +32,36 @@ export class AppComponent implements OnInit {
   currentView: 'list' | 'calendar' = 'list';
   userRole: UserRole = 'viewer';
 
-  constructor(private taskPanelService: TaskPanelService) {}
+  constructor(
+    private taskPanelService: TaskPanelService,
+    private authService: AuthService,
+    private firestoreService: FirestoreService
+  ) {}
 
   @ViewChild('taskDetailComponent') taskDetailComp?: TaskdetailComponent;
   @ViewChild(CalendarViewComponent) calendarComp?: CalendarViewComponent;
 
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.taskPanelService.selectedTask$.subscribe(task => this.selectedTask = task);
     this.taskPanelService.projectId$.subscribe(id => this.projectId = id);
     this.taskPanelService.isOpen$.subscribe(open => this.isTaskPanelOpen = open);
-  
     this.taskPanelService.userRole$.subscribe(role => this.userRole = role);
+    
+    const user = await this.authService.getCurrentUser();
+    if (user?.uid) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const key = `deadlineCheckDate_${user.uid}`;
+      const lastRun = localStorage.getItem(key);
+  
+      if (lastRun !== todayStr) {
+        await this.firestoreService.checkDeadlineNotifications(user.uid);
+        localStorage.setItem(key, todayStr);
+      }
+    }
   }
+  
+  
   
 
   openTaskPanel(task: Task, projectId: string, autoMoveCompletedTasks: boolean): void {

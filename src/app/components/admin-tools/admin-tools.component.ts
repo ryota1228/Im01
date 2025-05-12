@@ -26,4 +26,25 @@ export class AdminToolsComponent {
       this.isRunning = false;
     }
   }
+
+  async forceSendDeadlineNotifications() {
+    this.isRunning = true;
+    this.log = '期日通知チェック中...';
+  
+    try {
+      const users = await this.firestoreService.getAllUsers();
+      for (const user of users) {
+        await this.firestoreService.checkDeadlineNotifications(user.uid);
+      }
+      this.log = '✅ 全ユーザーに対して期日通知をチェック＆送信しました';
+    } catch (error) {
+      console.error(error);
+      this.log = '❌ 期日通知エラー: ' + (error as any).message;
+    } finally {
+      this.isRunning = false;
+    }
+  }
+  
+
+
 }

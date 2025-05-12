@@ -1,63 +1,46 @@
-<h2>通知設定</h2>
+<div class="dialog-wrapper">
+<h2 class="dialog-title">通知設定</h2>
 
-<div>
-  <label>新規タスク:</label>
+<div class="dialog-section">
+  <label>新規タスク通知:</label>
   <select [(ngModel)]="settings.newTask">
-    <option value="all">すべて通知</option>
-    <option value="assigned">自分のタスクのみ</option>
+    <option value="all">参加プロジェクトのタスクすべて通知</option>
+    <option value="assigned">自分のタスクのみ通知</option>
     <option value="none">通知しない</option>
   </select>
 </div>
 
-<div>
-  <label>更新通知:</label>
+<div class="dialog-section">
+  <label>タスク更新通知:</label>
   <select [(ngModel)]="settings.taskUpdate">
-    <option value="all">すべて通知</option>
-    <option value="assigned">自分のタスクのみ</option>
+    <option value="all">参加プロジェクトのタスクすべて通知</option>
+    <option value="assigned">自分のタスクのみ通知</option>
     <option value="none">通知しない</option>
   </select>
 </div>
 
-<div>
-  <label>コメント通知:</label>
-  <select [(ngModel)]="settings.comment">
-    <option value="all">すべて通知</option>
-    <option value="assigned">自分のタスクのみ</option>
-    <option value="none">通知しない</option>
-  </select>
+<div class="dialog-section">
+  <label>期日通知:</label>
+  <div class="row">
+    <input type="checkbox" [(ngModel)]="settings.deadline.enabled" />
+    <span>有効にする</span>
+  </div>
+
+  <div class="row indent" *ngIf="settings.deadline.enabled">
+    <span>期日の</span>
+    <input
+      type="number"
+      [(ngModel)]="settings.deadline.daysBefore"
+      min="1"
+      class="days-input"
+    />
+    <span>日前に通知</span>
+  </div>
 </div>
 
-<div>
-  <label>期日通知の○日前:</label>
-  <input type="number" [(ngModel)]="settings.deadline.daysBefore" min="1" />
-  <input type="checkbox" [(ngModel)]="settings.deadline.enabled" /> 有効
-</div>
 
-<div>
-  <label>達成感通知:</label>
-  <input type="checkbox" [(ngModel)]="settings.progress" />
-</div>
-
-<hr />
-
-<h3>外部通知</h3>
-
-<div>
-  <label>デスクトップ通知:</label>
-  <input type="checkbox" [(ngModel)]="settings.external.desktop" />
-</div>
-
-<div>
-  <label>メール通知:</label>
-  <input type="checkbox" [(ngModel)]="settings.external.email" />
-</div>
-
-<div>
-  <label>Slack通知:</label>
-  <input type="checkbox" [(ngModel)]="settings.external.slack" />
-</div>
-
-<div class="actions">
+<div class="dialog-actions">
   <button (click)="cancel()">キャンセル</button>
-  <button (click)="save()">保存</button>
+  <button class="save-button" (click)="save()">保存</button>
+</div>
 </div>

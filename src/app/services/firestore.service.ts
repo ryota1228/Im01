@@ -109,6 +109,7 @@ export class FirestoreService {
     return setDoc(taskRef, data, { merge: true });
   }
   
+  
   deleteDocument(path: string): Promise<void> {
     const ref = doc(this.firestore, path);
     return deleteDoc(ref);
@@ -283,11 +284,6 @@ export class FirestoreService {
     await setDoc(settingsRef, settings, { merge: true }); // merge:trueで上書きじゃなく追記
   }
 
-  removeMemberFromProject(projectId: string, userId: string): Promise<void> {
-    const memberPath = `projects/${projectId}/members/${userId}`;
-    return this.deleteDocument(memberPath);
-  }
-
   async markProjectAsCompleted(projectId: string): Promise<void> {
     const docRef = doc(this.firestore, `projects/${projectId}`);
     await updateDoc(docRef, { status: 'completed' });
@@ -357,8 +353,11 @@ export class FirestoreService {
   
       const settingsSnap = await getDoc(doc(this.firestore, `users/${uid}`));
       const settings = settingsSnap.data()?.['notificationSettings'] as NotificationSettings | undefined;
+
+      const task = await this.getTaskById(projectId, taskId);
+      if (!task) return;
   
-      if (!this.shouldNotify(type, uid, settings, performerUid, taskId)) continue;
+      if (!this.shouldNotify(type, uid, settings, performerUid, task, projectId)) continue;
   
       await addDoc(collection(this.firestore, 'notifications'), {
         projectId,
@@ -371,38 +370,122 @@ export class FirestoreService {
       });
     }
   }
-  
 
   private shouldNotify(
     type: Notification['type'],
     uid: string,
     settings: NotificationSettings | undefined,
     performerUid: string,
-    taskId: string
+    task: Task,
+    projectId: string
   ): boolean {
     if (!settings) return false;
   
-    switch (type) {
-      case 'new':
-        return settings.newTask === 'all' || (settings.newTask === 'assigned' && this.isAssignedTo(uid, taskId));
-      case 'update':
-        return settings.taskUpdate === 'all' || (settings.taskUpdate === 'assigned' && this.isAssignedTo(uid, taskId));
-      case 'comment':
-        return settings.comment === 'all' || (settings.comment === 'assigned' && this.isAssignedTo(uid, taskId));
-      case 'deadline':
-        return settings.deadline.enabled;
-      case 'progress':
-        return settings.progress;
-      default:
-        return false;
+    const typeToKeyMap: { [K in Notification['type']]: keyof NotificationSettings['default'] } = {
+      new: 'newTask',
+      update: 'taskUpdate',
+      comment: 'comment',
+      deadline: 'deadline',
+      progress: 'progress'
+    };
+  
+    const key = typeToKeyMap[type];
+    const projectSettings = settings.overrides?.[projectId];
+    const mode = projectSettings?.[key] ?? settings.default?.[key];
+  
+    const shouldNotify =
+      mode === 'all' || (mode === 'assigned' && task.assignee === uid);
+  
+
+    console.log('[通知チェック] shouldNotify:', {
+      uid,
+      projectId,
+      type,
+      settingKey: key,
+      mode,
+      assignee: task.assignee,
+      performer: performerUid,
+      shouldNotify
+    });
+  
+    if (!mode || mode === 'none') return false;
+    return shouldNotify;
+  }
+
+  async shouldNotifyUpdate(
+    uid: string,
+    settings: NotificationSettings | undefined,
+    before: Task,
+    after: Task,
+    projectId: string
+  ): Promise<boolean> {
+    if (!settings) return false;
+  
+    const projectSettings = settings.overrides?.[projectId];
+    const mode = projectSettings?.taskUpdate ?? settings.default?.taskUpdate;
+  
+    if (!mode || mode === 'none') return false;
+  
+    const chatChanged = before.chat !== after.chat;
+    if (chatChanged) return false;
+  
+    const wasAssigned = before.assignee === uid;
+    const isAssignedNow = after.assignee === uid;
+  
+    if (mode === 'all') return true;
+  
+    if (mode === 'assigned') {
+      if (wasAssigned || (!wasAssigned && isAssignedNow)) {
+        return true;
+      }
     }
+  
+    return false;
   }
   
 
-  private isAssignedTo(uid: string, taskId: string): boolean {
-    
-    return true;
+  async updateTaskWithNotification(
+    projectId: string,
+    taskId: string,
+    newData: Partial<Task>,
+    performerUid: string
+  ): Promise<void> {
+    const beforeTask = await this.getTaskById(projectId, taskId);
+    if (!beforeTask) return;
+  
+    const taskRef = doc(this.firestore, `projects/${projectId}/tasks/${taskId}`);
+    await setDoc(taskRef, newData, { merge: true });
+  
+    const afterTask = { ...beforeTask, ...newData };
+  
+    const memberIds: string[] = (await this.getProjectMemberIds(projectId)) ?? [];
+  
+    for (const uid of memberIds) {
+      if (uid === performerUid) continue;
+      const settingsRaw = await this.getNotificationSettings(uid);
+      const settings = settingsRaw ?? undefined;
+      const should = await this.shouldNotifyUpdate(uid, settings, beforeTask, afterTask, projectId);
+
+      if (!should) continue;
+  
+      await this.createNotification({
+        projectId,
+        taskId,
+        taskName: afterTask.title,
+        type: 'update',
+        recipientId: uid,
+        timestamp: new Date(),
+        isRead: false,
+      });
+    }
   }
+  
+  private async isAssignedTo(uid: string, taskId: string): Promise<boolean> {
+    const taskSnap = await getDoc(doc(this.firestore, `tasks/${taskId}`));
+    const task = taskSnap.data() as Task;
+    return task?.assignee === uid;
+  }
+  
 
 async sendSlackNotification(uid: string, taskTitle: string) {
   const userDoc = await this.getUserDocument(uid);
@@ -538,17 +621,16 @@ async togglePinProjectSafe(uid: string, projectId: string): Promise<void> {
   }
 
   async addMemberToTeam(teamId: string, uid: string): Promise<void> {
-    // チームのドキュメントにメンバー追加
+
     await updateDoc(doc(this.firestore, 'teams', teamId), {
       memberIds: arrayUnion(uid)
     });
   
-    // 該当ユーザーが参加しているプロジェクトを取得
+
     const projectsSnap = await getDocs(
       query(collection(this.firestore, 'projects'), where('memberIds', 'array-contains', uid))
     );
-  
-    // まだ含まれていないプロジェクトがあれば追加（このステップは既参加チェック後も有効）
+
     const allProjectsSnap = await getDocs(collection(this.firestore, 'projects'));
     const allProjects = allProjectsSnap.docs;
   
@@ -717,6 +799,87 @@ async togglePinProjectSafe(uid: string, projectId: string): Promise<void> {
       console.error('プロジェクトタイトルの取得に失敗:', e);
       return null;
     }
-  }  
-      
+  }
+
+  async checkDeadlineNotifications(uid: string): Promise<void> {
+    const projects = await this.getProjectsByUserId(uid);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (const project of projects) {
+      const settings = await this.getNotificationSettings(uid);
+      const override = settings?.overrides?.[project.id]?.deadline;
+      const global = settings?.default?.deadline;
+      const deadlineSetting = override ?? global;
+  
+      if (!deadlineSetting?.enabled) continue;
+  
+      const daysBefore = deadlineSetting.daysBefore ?? 1;
+      const notifyDate = new Date(today);
+      notifyDate.setDate(notifyDate.getDate() + daysBefore);
+  
+      const tasks = await this.getTasksByProjectIdOnce(project.id);
+  
+      for (const task of tasks) {
+        if (task.assignee !== uid || task.status === '完了') continue;
+  
+        const taskDueDate = task.dueDate instanceof Date
+          ? task.dueDate
+          : new Date(task.dueDate as string);
+  
+        if (
+          taskDueDate.getFullYear() === notifyDate.getFullYear() &&
+          taskDueDate.getMonth() === notifyDate.getMonth() &&
+          taskDueDate.getDate() === notifyDate.getDate()
+        ) {
+          const exists = await this.checkExistingNotification(uid, project.id, task.id, 'deadline');
+          if (!exists) {
+            await this.createNotification({
+              recipientId: uid,
+              projectId: project.id,
+              taskId: task.id,
+              taskName: task.title,
+              type: 'deadline',
+              timestamp: new Date(),
+              isRead: false
+            });
+          }
+        }
+      }
+    }
+  }
+
+  private async checkExistingNotification(
+    uid: string,
+    projectId: string,
+    taskId: string,
+    type: Notification['type']
+  ): Promise<boolean> {
+    const q = query(
+      collection(this.firestore, 'notifications'),
+      where('recipientId', '==', uid),
+      where('projectId', '==', projectId),
+      where('taskId', '==', taskId),
+      where('type', '==', type)
+    );
+    const snap = await getDocs(q);
+    return !snap.empty;
+  }
+
+  async updateNotificationOverrides(userId: string, projectId: string, override: any): Promise<void> {
+    const ref = doc(this.firestore, `users/${userId}`);
+    await setDoc(ref, { [`notificationSettings.overrides.${projectId}`]: override }, { merge: true });
+  }
+  
+  async removeMemberFromProject(projectId: string, userId: string): Promise<void> {
+    const memberPath = `projects/${projectId}/members/${userId}`;
+    await this.deleteDocument(memberPath);
+
+
+    const projectRef = doc(this.firestore, `projects/${projectId}`);
+    await updateDoc(projectRef, {
+      memberIds: arrayRemove(userId)
+    });
+  }
+
+  
 }

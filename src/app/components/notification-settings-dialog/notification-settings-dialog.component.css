@@ -1,0 +1,231 @@
+.dialog-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 16px;
+  }
+  
+  .dialog-section {
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  
+  .dialog-section label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  
+  select, input[type="number"] {
+    width: 100%;
+    padding: 6px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  
+  .indent {
+    margin-left: 24px;
+  }
+  
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  
+  button {
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  
+  .save-button {
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+  
+  .save-button:hover {
+    background-color: #1565c0;
+  }
+
+  .dialog-section select,
+  .dialog-section input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .notification-settings-dialog .mat-dialog-container {
+    min-width: 400px;
+    max-width: 460px;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  
+  .notification-settings-dialog form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .notification-settings-dialog label {
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  
+  .notification-settings-dialog select,
+  .notification-settings-dialog input[type="number"] {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .notification-settings-dialog .deadline-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .notification-settings-dialog .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  /* ========================
+   共通スタイル
+======================== */
+button {
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  
+  select,
+  input[type="number"] {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  
+  /* ========================
+     ダイアログ全体
+  ======================== */
+  .notification-settings-dialog .mat-dialog-container {
+    min-width: 400px;
+    max-width: 460px;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  
+  .notification-settings-dialog form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .notification-settings-dialog .dialog-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 16px;
+  }
+  
+  /* ========================
+     セクションブロック
+  ======================== */
+  .notification-settings-dialog .dialog-section {
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  
+  .notification-settings-dialog .dialog-section label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  
+  /* ========================
+     フォーム細部
+  ======================== */
+  .notification-settings-dialog .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  
+  .notification-settings-dialog .indent {
+    margin-left: 24px;
+  }
+  
+  .notification-settings-dialog .deadline-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  /* ========================
+     ボタン・アクション
+  ======================== */
+  .notification-settings-dialog .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  
+  .notification-settings-dialog .save-button {
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+  
+  .notification-settings-dialog .save-button:hover {
+    background-color: #1565c0;
+  }
+
+  .notification-settings-dialog .deadline-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
+  
+  .notification-settings-dialog .days-input {
+    width: 60px;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  
+  .indent {
+    margin-left: 24px;
+  }
+  
+  .days-input {
+    width: 60px;
+  }
+  
+  
+  
+  

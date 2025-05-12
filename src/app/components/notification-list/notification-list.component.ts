@@ -18,6 +18,9 @@ import { TaskPanelService } from '../../services/task-panel.service';
 export class NotificationListComponent implements OnInit {
   notifications: Notification[] = [];
   private uid!: string;
+  filteredNotifications: Notification[] = [];
+  selectedTypes: Notification['type'][] = [];
+  showUnreadOnly: boolean = false;
 
   constructor(
     private firestoreService: FirestoreService,
@@ -29,22 +32,20 @@ export class NotificationListComponent implements OnInit {
   async ngOnInit() {
     const user = await this.authService.getCurrentUserSync();
     this.uid = user.uid;
-
-    // 最初に既存通知を取得
+  
     this.notifications = await this.firestoreService.getNotifications(this.uid);
-
-    // Firestoreの通知をリアルタイムで監視
+    this.applyFilters();
     const q = query(
       collection(this.firestore, 'notifications'),
       where('recipientId', '==', this.uid),
       where('isRead', '==', false)
     );
-
+  
     onSnapshot(q, async (snapshot) => {
       for (const change of snapshot.docChanges()) {
         if (change.type === 'added') {
           const docData = change.doc.data();
-          const full: Notification = {
+          const newNotification: Notification = {
             id: change.doc.id,
             taskId: docData['taskId'],
             taskName: docData['taskName'],
@@ -54,22 +55,28 @@ export class NotificationListComponent implements OnInit {
             isRead: docData['isRead'],
             recipientId: docData['recipientId']
           };
-    
-          this.notifications.unshift(full);
+
+          const alreadyExists = this.notifications.some(n => n.id === newNotification.id);
+          if (!alreadyExists) {
+            this.notifications.unshift(newNotification);
+            this.applyFilters();
+          }
     
           const settings = await this.firestoreService.getNotificationSettings(this.uid);
           if (settings?.external?.desktop) {
-            this.showBrowserNotification(full.taskName);
+            this.showBrowserNotification(newNotification.taskName);
           }
         }
       }
     });
+    
   }
+  
 
   async onClick(notification: Notification) {
     if (!notification.isRead) {
       await this.firestoreService.markNotificationAsRead(notification.id);
-      notification.isRead = true; // 即時UI反映
+      notification.isRead = true;
     }
   
     if (notification.projectId && notification.taskId) {
@@ -96,6 +103,36 @@ export class NotificationListComponent implements OnInit {
       });
     }
   }
+
+  getTypeLabel(type: Notification['type']): string {
+    switch (type) {
+      case 'new': return '【新規】';
+      case 'update': return '【更新】';
+      case 'deadline': return '【期日】';
+      default: return '';
+    }
+  }
+
+  applyFilters() {
+    this.filteredNotifications = this.notifications.filter(n => {
+      const typeMatch = this.selectedTypes.length === 0 || this.selectedTypes.includes(n.type);
+      const unreadMatch = !this.showUnreadOnly || !n.isRead;
+      return typeMatch && unreadMatch;
+    });
+  }
+
+  toggleType(type: Notification['type']) {
+    if (this.selectedTypes.includes(type)) {
+      this.selectedTypes = this.selectedTypes.filter(t => t !== type);
+    } else {
+      this.selectedTypes.push(type);
+    }
+    this.applyFilters();
+  }
   
+  toggleUnreadOnly() {
+    this.showUnreadOnly = !this.showUnreadOnly;
+    this.applyFilters();
+  }  
   
 }

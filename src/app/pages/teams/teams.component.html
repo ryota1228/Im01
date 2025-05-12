@@ -1,13 +1,12 @@
 <div class="team-container">
   <h2>チーム管理</h2>
 
-  <!-- 新規作成 -->
+
   <div class="new-team">
     <input [(ngModel)]="newTeamName" placeholder="新規チーム名を入力" />
     <button (click)="createTeam()">作成</button>
   </div>
 
-  <!-- 検索 + ソート + 展開操作 -->
   <div class="team-controls">
     <input [(ngModel)]="searchKeyword" placeholder="チーム名で検索" />
     <select [(ngModel)]="sortOption">
@@ -18,11 +17,9 @@
     <button (click)="collapseAll()">すべて折りたたむ</button>
   </div>
 
-  <!-- チーム一覧 -->
   <div class="team-list">
     <div *ngFor="let team of sortedTeams" class="team-card">
       
-      <!-- 編集中でない場合 -->
       <div *ngIf="editingTeamId !== team.id">
         <div class="team-header">
           <div class="team-title">{{ team.name }}</div>
@@ -35,10 +32,10 @@
           </div>
         </div>
 
-        <!-- 開いたときの中身 -->
+
         <div *ngIf="isExpanded[team.id]" class="team-body">
 
-          <!-- 📂 参加プロジェクト -->
+
           <div class="section">
             <div class="section-title">
               <span class="label">
@@ -67,7 +64,7 @@
             </div>
           </div>
 
-          <!-- 👥 メンバー一覧 -->
+
           <div class="section">
             <div class="section-title">
               <span class="label">
@@ -80,7 +77,7 @@
             <app-team-member-list [teamId]="team.id"></app-team-member-list>
           </div>          
 
-          <!-- ✅ タスク実績 -->
+
           <div class="section">
             <div class="section-title no-actions">
               <span class="label">
@@ -94,7 +91,7 @@
         </div>
       </div>
 
-      <!-- 編集モード -->
+
       <div *ngIf="editingTeamId === team.id" class="edit-form">
         <input [(ngModel)]="editedTeamName" />
         <button (click)="saveEdit(team.id)">保存</button>

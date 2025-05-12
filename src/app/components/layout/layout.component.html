@@ -18,37 +18,31 @@
   <div class="body-row">
     <aside class="sidebar" [class.closed]="!sidebarOpen">
 
-      <div class="sidebar-top">
-        <div class="notification-icon" (click)="toggleNotifications()">
-          <span class="material-icons">notifications</span>
-          <span *ngIf="hasUnread" class="badge">●</span>
-        </div>
-      </div>
-      
-      <!-- 🔽 通知リスト（トグル表示） -->
-      <div *ngIf="showNotifications" class="notification-panel">
-        <app-notification-list></app-notification-list>
-      </div>
-
       <div class="sidebar-content">
         <div class="sidebar-menu-list">
-    
-          <a href="/" class="sidebar-link">
-            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: white; display: inline-block; vertical-align: middle; padding-right: 8px;">
-              <path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1h-6v-6H10v6H4a1 1 0 0 1-1-1V9.5z"/>
-            </svg>
 
+          <div class="notification-wrapper" (click)="toggleNotifications()">
+            <span *ngIf="hasUnread" class="notification-badge">●</span>
+            <span class="material-icons">notifications</span>
+            <span class="notification-label">最新通知</span>
+          </div>
+
+          <div *ngIf="showNotifications" class="notification-panel">
+            <app-notification-list></app-notification-list>
+          </div>
+
+          <a (click)="openNotificationSettings()" class="sidebar-link">
+            <span class="material-icons sidebar-icon">settings</span>
+            <span>通知設定</span>
+          </a>
+    
+          <a routerLink="/" class="sidebar-link">
+            <span class="material-icons sidebar-icon">home</span>
             <span>ホーム</span>
           </a>
-
-          <a href="/teams" class="sidebar-link">
-            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: white; display: inline-block; vertical-align: middle; padding-right: 8px;">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-
+          
+          <a routerLink="/teams" class="sidebar-link">
+            <span class="material-icons sidebar-icon">groups</span>
             <span>チーム</span>
           </a>
     
@@ -59,16 +53,14 @@
         <span class="material-icons">folder</span>プロジェクト
         <span class="material-icons arrow">{{ isProjectListOpen ? 'expand_less' : 'expand_more' }}</span>
       </div>
-
-      <button *ngIf="isProjectListOpen" class="sidebar-link sidebar-sub add-project-btn" (click)="openCreateProjectDialog()">
-        ＋ 新規作成
-      </button>
       
       <div *ngIf="isProjectListOpen" class="project-list">
         <a *ngFor="let p of joinedProjects" [routerLink]="['/project', p.id]" class="sidebar-sub-link">{{ p.title }}</a>
       </div>
 
-
+      <button *ngIf="isProjectListOpen" class="sidebar-link sidebar-sub add-project-btn" (click)="openCreateProjectDialog()">
+        ＋ 新規作成
+      </button>
       
     </aside>
 

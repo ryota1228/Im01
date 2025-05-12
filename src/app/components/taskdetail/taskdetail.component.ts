@@ -353,11 +353,12 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
       const test = JSON.stringify(updatedTask);
       console.log('保存データ:', test);
     } catch (e) {
-      console.error('JSON変換失敗（circular構造？）:', e);
+      console.error('JSON変換失敗:', e);
     }
   
     try {
-      await setDoc(ref, updatedTask);
+      const user = await this.authService.getCurrentUser();
+      await this.firestoreService.updateTaskWithNotification(this.projectId,this.task.id,updatedTask,user?.uid ?? 'unknown');
       this.closed.emit(true);
     } catch (error) {
       console.error('[Taskdetail] Task update failed:', error);

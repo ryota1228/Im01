@@ -1,9 +1,9 @@
 <div class="notification-list">
-    <ul>
-        <li *ngFor="let n of notifications" (click)="onClick(n)">
-          <strong>{{ n.taskName }}</strong>（{{ n.type }}）
-          <span *ngIf="!n.isRead">🟠 未読</span>
-        </li>
-      </ul>
-  </div>
-  
+  <ul>
+    <li *ngFor="let n of filteredNotifications.slice(0, 10)" (click)="onClick(n)" class="notification-item">
+      <span *ngIf="!n.isRead">🟠</span>
+      <strong>{{ getTypeLabel(n.type) }}</strong>{{ n.taskName }}
+    </li>
+  </ul>
+</div>
+

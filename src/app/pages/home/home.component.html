@@ -13,7 +13,7 @@
             {{ task.title }}（進捗率：{{ task.progress }}%）
           </li>
         </ul>
-        <p *ngIf="!isLoading && todaysTasks.length === 0">今日のタスクはありません</p>
+        <p *ngIf="!isLoading && todaysTasks.length === 0">今日期限のタスクはありません</p>
         </div>
       </div>
 
@@ -25,7 +25,7 @@
             {{ task.title }}（期限: {{ task.dueDate | date: 'MM/dd' }}）
           </li>
         </ul>
-        <p *ngIf="delayedTasks.length === 0">遅延しているタスクはありません</p>
+        <p *ngIf="delayedTasks.length === 0">期限超過中のタスクはありません</p>
         </div>
       </div>
 
@@ -64,31 +64,35 @@
 
     <!-- 右カラム -->
     <div class="home-side">
-      <!-- <div class="section clock-attendance">
-        <h2>現在時刻と勤怠</h2>
-        <div class="section-scrollable">
-        <p>{{ currentTime | date: 'yyyy/MM/dd HH:mm:ss' }}</p>
-        <p>現在のステータス: {{ attendanceStatus }}</p>
-        <div class="attendance-buttons">
-          <button (click)="setAttendance('出勤')" [disabled]="attendanceStatus === '出勤'">出勤</button>
-          <button (click)="setAttendance('退勤')" [disabled]="attendanceStatus === '退勤'">退勤</button>
-          <button (click)="setAttendance('休憩')" [disabled]="attendanceStatus === '休憩'">休憩</button>
-          <button (click)="setAttendance('出勤')" [disabled]="attendanceStatus === '出勤'">復帰</button>
-        </div>
-        </div>
-      </div> -->
-
       <div class="notification-preview">
         <h2>通知</h2>
+        <div class="notification-filters">
+          <label>
+            <input type="checkbox" [checked]="showUnreadOnly" (change)="toggleUnreadOnly($event)"> 未読のみ
+          </label>
+        
+          <div class="filter-group">
+            <div class="filter-group-title">通知の種別</div>
+            <label><input type="checkbox" (change)="toggleType('new')" [checked]="selectedTypes.includes('new')"> 新規</label>
+            <label><input type="checkbox" (change)="toggleType('update')" [checked]="selectedTypes.includes('update')"> 更新</label>
+            <label><input type="checkbox" (change)="toggleType('deadline')" [checked]="selectedTypes.includes('deadline')"> 期日</label>
+          </div>
+        </div>
+
+        
         <div class="section-scrollable">
         <div *ngIf="notifications.length === 0">通知はまだありません</div>
+
         <ul>
-          <li *ngFor="let n of notifications | slice:0:5" (click)="onClickNotification(n)">
-            <strong>{{ n.taskName }}</strong>（{{ n.type }}）
-            <span *ngIf="!n.isRead">🟠 未読</span>
+          <li *ngFor="let n of filteredNotifications" (click)="onClickNotification(n)">            
+            <span *ngIf="!n.isRead">🟠</span><strong>{{ getTypeLabel(n.type) }}</strong>{{ n.taskName }}<span class="timestamp">（{{ n.timestamp.toDate() | date: 'yyyy/MM/dd HH:mm' }}）</span>
           </li>
         </ul>
-        <button (click)="goToAllNotifications()">すべて表示</button>
+        
+
+
+
+
         </div>
       </div>
     </div>

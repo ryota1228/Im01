@@ -16,6 +16,7 @@ import { Component, OnInit } from '@angular/core';
 import { FirestoreService } from '../../services/firestore.service';
 import { Notification } from '../../models/notification.model';
 import { NotificationListComponent } from '../notification-list/notification-list.component';
+import { NotificationSettingsDialogComponent } from '../notification-settings-dialog/notification-settings-dialog.component';
 
 @Component({
   selector: 'app-layout',
@@ -66,7 +67,8 @@ export class LayoutComponent implements OnInit {
         this.joinedProjects = filtered;
 
         const notifications = await this.firestoreService.getNotifications(user.uid);
-        this.hasUnread = notifications.some(n => !n.isRead);
+        const top10 = notifications.slice(0, 10);
+        this.hasUnread = top10.some(n => !n.isRead);
       }
     });
   }
@@ -120,6 +122,14 @@ openCreateProjectDialog(): void {
     if (newProjectId) {
       this.router.navigate(['/project', newProjectId]);
     }
+  });
+}
+
+openNotificationSettings(): void {
+  this.dialog.open(NotificationSettingsDialogComponent, {
+    width: '500px',
+    data: {},
+    disableClose: false
   });
 }
   

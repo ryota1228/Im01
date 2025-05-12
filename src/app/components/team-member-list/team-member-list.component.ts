@@ -8,7 +8,8 @@ import { User } from '../../models/user.model';
   selector: 'app-team-member-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './team-member-list.component.html'
+  templateUrl: './team-member-list.component.html',
+  styleUrls: ['./team-member-list.component.css']
 })
 export class TeamMemberListComponent implements OnInit {
   @Input() teamId!: string;

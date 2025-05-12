@@ -1,10 +1,13 @@
 <div class="admin-tools-container">
-    <h2>管理者ツール</h2>
-  
-    <button (click)="syncTeamMembersToProjects()" [disabled]="isRunning">
-      チームメンバー → プロジェクト参加情報を同期
-    </button>
-  
-    <p>{{ log }}</p>
-  </div>
-  
+  <h2>管理者ツール</h2>
+
+  <button (click)="syncTeamMembersToProjects()" [disabled]="isRunning">
+    チームメンバー → プロジェクト参加情報を同期
+  </button>
+
+  <button (click)="forceSendDeadlineNotifications()" [disabled]="isRunning">
+    期日通知を今すぐ全ユーザーに送信
+  </button>
+
+  <p>{{ log }}</p>
+</div>

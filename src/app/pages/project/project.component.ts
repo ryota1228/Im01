@@ -700,7 +700,7 @@ export class ProjectComponent implements OnInit {
     const sectionTitle = this.addingSection;
     const allTasks = await this.firestoreService.getTasksByProjectIdOnce(this.projectId);
     const targetTasks = allTasks.filter(t => t.section === sectionTitle && t.order != null);
-
+  
     await Promise.all(
       targetTasks.map(t =>
         this.firestoreService.updateDocument(`projects/${this.projectId}/tasks/${t.id}`, {
@@ -711,8 +711,7 @@ export class ProjectComponent implements OnInit {
   
     const dueDate = parseDueDate(this.newTask.dueDate);
   
-    const task: Task = {
-      id: '',
+    const taskData: Omit<Task, 'id'> = {
       title: this.newTask.title!,
       assignee: this.newTask.assignee || '',
       dueDate,
@@ -722,24 +721,28 @@ export class ProjectComponent implements OnInit {
       ...(this.newTask.parentMilestoneId ? { parentMilestoneId: this.newTask.parentMilestoneId } : {})
     };
   
-    await this.firestoreService.addTask(this.projectId, task);
+    const taskRef = await addDoc(
+      collection(this.firestore, `projects/${this.projectId}/tasks`),
+      taskData
+    );
   
     if (this.currentUserId) {
       await Promise.all([
         this.firestoreService.sendNotificationToProjectMembers(
           this.projectId,
-          task.id,
-          task.title,
+          taskRef.id,
+          taskData.title,
           'new',
           this.currentUserId
         ),
-        this.firestoreService.sendSlackNotification(this.currentUserId, task.title)
+        this.firestoreService.sendSlackNotification(this.currentUserId, taskData.title)
       ]);
     }
   
     this.cancelAddTask();
     this.loadSectionsAndTasks(this.projectId!);
   }
+  
   
 
   cancelAddTask(): void {

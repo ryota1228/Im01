@@ -36,8 +36,12 @@ export class HomeComponent implements OnInit {
 
   completedProjectIds: string[] = [];
   private completedProjectStatusMap: { [projectId: string]: boolean } = {};
-  
 
+  selectedTypes: Notification['type'][] = [];
+  showUnreadOnly: boolean = false;
+  typeFilter: { [key in Notification['type']]?: boolean } = {};
+
+  
   constructor(
     private firestoreService: FirestoreService,
     private authService: AuthService,
@@ -92,13 +96,15 @@ export class HomeComponent implements OnInit {
     this.completedProjectStatusMap = {};
   
     for (const project of projects) {
+      if (project.status === 'completed') continue;
+      
       const tasks = await this.firestoreService.getTasksByProjectIdOnce(project.id);
       const delayedCount = tasks.filter(t => {
         const due = new Date(t.dueDate);
         return due < new Date() && t.status !== '完了';
       }).length;
   
-      this.completedProjectStatusMap[project.id] = project.status === 'completed'; // ← 状態を保存
+      this.completedProjectStatusMap[project.id] = project.status === 'completed';
   
       result.push({ ...project, pinned: pinnedIds.includes(project.id), delayedCount });
     }
@@ -168,11 +174,7 @@ export class HomeComponent implements OnInit {
     await this.firestoreService.addTask(project.id, task);
     this.newTaskTitle = '';
     await this.loadTasks();
-  }
-
-  onClickNotification(n: Notification) {
-    console.log('通知クリック:', n);
-  }
+  }  
 
   goToAllNotifications() {
     this.router.navigate(['/notifications']);
@@ -193,5 +195,52 @@ export class HomeComponent implements OnInit {
   
     this.taskPanelService.open(task.projectId, task.id);
   }
+
+  get filteredNotifications(): Notification[] {
+    return this.notifications.filter(n => {
+      const typeMatch = this.selectedTypes.length === 0 || this.selectedTypes.includes(n.type);
+      const unreadMatch = !this.showUnreadOnly || !n.isRead;
+      return typeMatch && unreadMatch;
+    });
+  }
+  
+  toggleType(type: Notification['type']) {
+    if (this.selectedTypes.includes(type)) {
+      this.selectedTypes = this.selectedTypes.filter(t => t !== type);
+    } else {
+      this.selectedTypes.push(type);
+    }
+  }  
+  
+  toggleUnreadOnly(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.showUnreadOnly = input.checked;
+  }
+  
+
+  getTypeLabel(type: Notification['type']): string {
+    switch (type) {
+      case 'new': return '【新規】';
+      case 'update': return '【更新】';
+      case 'deadline': return '【期日】';
+      default: return '';
+    }
+  }
+
+  async onClickNotification(notification: Notification) {
+
+    if (!notification.isRead) {
+      await this.firestoreService.markNotificationAsRead(notification.id);
+      notification.isRead = true;
+    }
+  
+
+    if (notification.projectId && notification.taskId) {
+      this.taskPanelService.open(notification.projectId, notification.taskId);
+    } else {
+      console.warn('通知に projectId または taskId が不足しています');
+    }
+  }
+  
   
 }

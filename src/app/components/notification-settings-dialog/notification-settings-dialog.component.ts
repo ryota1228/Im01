@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { NotificationSettings } from '../../models/notification-settings.model';
+import { NotificationSettings, NotificationScope } from '../../models/notification-settings.model';
 import { FirestoreService } from '../../services/firestore.service';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
@@ -14,7 +14,10 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, FormsModule]
 })
 export class NotificationSettingsDialogComponent implements OnInit {
-  settings!: NotificationSettings;
+  @Input() projectId?: string;
+  settings: any = {};
+
+  private userId: string = '';
 
   constructor(
     private firestoreService: FirestoreService,
@@ -24,35 +27,53 @@ export class NotificationSettingsDialogComponent implements OnInit {
 
   async ngOnInit() {
     const user = await this.authService.getCurrentUser();
-    if (user) {
-      this.settings =
-        (await this.firestoreService.getNotificationSettings(user.uid)) ||
-        this.defaultSettings();
-    }
-  }  
+    if (!user) return;
+    this.userId = user.uid;
 
-  defaultSettings(): NotificationSettings {
+    const allSettings = await this.firestoreService.getNotificationSettings(this.userId);
+
+    if (this.projectId && allSettings?.overrides?.[this.projectId]) {
+      this.settings = { ...this.defaultSubSettings(), ...allSettings.overrides[this.projectId] };
+    } else if (this.projectId) {
+      this.settings = this.defaultSubSettings();
+    } else {
+      this.settings = { ...this.defaultSubSettings(), ...allSettings?.default };
+    }
+  }
+
+  defaultSubSettings(): any {
     return {
       newTask: 'assigned',
       taskUpdate: 'assigned',
       comment: 'assigned',
       deadline: { daysBefore: 1, enabled: true },
-      progress: true,
-      external: {
-        desktop: false,
-        email: false,
-        slack: false,
-      },
+      progress: true
     };
   }
 
   async save() {
-    const user = await this.authService.getCurrentUserSync();
-    if (user) {
-      await this.firestoreService.updateNotificationSettings(user.uid, this.settings);
-      this.dialogRef.close();
+    if (!this.userId) return;
+  
+    if (this.projectId) {
+      await this.firestoreService.updateNotificationOverrides(this.userId, this.projectId, this.settings);
+    } else {
+      const existing = await this.firestoreService.getNotificationSettings(this.userId);
+      const external = existing?.external ?? {
+        desktop: false,
+        email: false,
+        slack: false
+      };
+  
+      await this.firestoreService.updateNotificationSettings(this.userId, {
+        default: this.settings,
+        overrides: existing?.overrides ?? {},
+        external
+      });
     }
-  }  
+  
+    this.dialogRef.close();
+  }
+  
 
   cancel() {
     this.dialogRef.close();

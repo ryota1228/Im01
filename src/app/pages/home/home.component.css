@@ -1,4 +1,3 @@
-/* ダッシュボード全体 */
 .dashboard-wrapper {
   background: #ffffff;
   border-radius: 12px;
@@ -8,7 +7,7 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
-/* グリッドレイアウト */
+
 .home-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -23,7 +22,6 @@
   gap: 24px;
 }
 
-/* 各セクション共通 */
 .section,
 .notification-preview {
   background-color: #fff;
@@ -61,7 +59,6 @@ li:hover {
   background-color: #f5f5f5;
 }
 
-/* ボタン共通 */
 button {
   margin-top: 6px;
   margin-right: 8px;
@@ -78,7 +75,6 @@ button:hover {
   background-color: #125a9c;
 }
 
-/* 通知リスト項目 */
 .notification-preview ul {
   list-style: none;
   padding: 0;
@@ -175,7 +171,7 @@ li {
   right: 0;
   top: 50%;
   transform: translateY(-50%);
-  color: white; /* ← 追加 */
+  color: white;
   font-weight: bold;
   background-color: #1976d2;
   border: none;
@@ -197,22 +193,57 @@ li {
 }
 
 .pin-button.pinned {
-  background-color: #1565c0; /* ← 明るめのブルーに */
+  background-color: #1565c0;
   color: white;
 }
 
 .pin-button.pinned:hover {
-  background-color: #0d47a1; /* ホバー時は少し濃く */
+  background-color: #0d47a1;
 }
 
 .pin-button {
   float: right;
   display: flex;
   align-items: center;
-  height: 28px;              /* 縦幅ちょい小さめ */
+  height: 28px;
   padding: 0 8px;
   font-size: 13px;
   line-height: 1;
-  margin-top: 2px;           /* 調整（必要に応じて） */
+  margin-top: 2px;
 }
 
+.notification-list-home {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.filter-group-title {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-weight: bold;
+  font-size: 13px;
+  color: #555;
+}
+
+.notification-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.filter-group {
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+}
+
+.filter-group-title {
+  font-weight: bold;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #555;
+}
