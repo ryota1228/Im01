@@ -17,6 +17,7 @@ import { FirestoreService } from '../../services/firestore.service';
 import { Notification } from '../../models/notification.model';
 import { NotificationListComponent } from '../notification-list/notification-list.component';
 import { NotificationSettingsDialogComponent } from '../notification-settings-dialog/notification-settings-dialog.component';
+import { EditDisplayNameDialogComponent } from '../edit-displayname-dialog/edit-displayname-dialog.component';
 
 @Component({
   selector: 'app-layout',
@@ -130,6 +131,19 @@ openNotificationSettings(): void {
     width: '500px',
     data: {},
     disableClose: false
+  });
+}
+
+openEditDisplayNameDialog(): void {
+  const dialogRef = this.dialog.open(EditDisplayNameDialogComponent, {
+    width: '400px',
+    data: { currentName: this.displayName }
+  });
+
+  dialogRef.afterClosed().subscribe(result => {
+    if (result) {
+      this.displayName = result;
+    }
   });
 }
   

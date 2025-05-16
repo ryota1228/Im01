@@ -113,16 +113,46 @@
   </div>
 </div>
 
+
     <div class="form-group">
       <label>チャット</label>
-      <textarea [(ngModel)]="task.chat" placeholder="チャットログ" [disabled]="isViewerUser"></textarea>
+      <textarea
+  [(ngModel)]="chatInput"
+  (input)="onChatInput()"
+  placeholder="@(半角)+ユーザー名"
+></textarea>
+
+<ul *ngIf="mentionCandidates.length > 0" class="mention-suggestions">
+  <li *ngFor="let candidate of mentionCandidates" (click)="selectMention(candidate)">{{ '@' + candidate.displayName }}</li>
+</ul>
+
+<button (click)="sendChatMessage()" class="custom-button apply-button">送信</button>
+
+
+      
+
     </div>
+
+<div class="chat-log-toggle" (click)="showChatLog = !showChatLog">
+  {{ showChatLog ? '▼' : '▶' }}ログ
+</div>
+
+<div class="form-group" *ngIf="showChatLog">
+  <label></label>
+  <div class="chat-log-box">
+    <div *ngFor="let log of chatLogs" class="chat-log-entry">
+      <strong>{{ getChatUserName(log.from) }} → {{ getChatUserName(log.to) }}:</strong>
+      <div class="chat-message-content">{{ log.message }}</div>
+    </div>
+  </div>
+</div>
+
 
 
     <div class="form-group file-list-wrapper">
       <label>添付ファイル</label>
     
-      <!-- 横並びの操作エリア -->
+
       <div class="upload-controls">
         <label class="upload-button">
           ファイル選択
@@ -130,7 +160,7 @@
         </label>
       </div>
     
-      <!-- ファイル名一覧（縦並び） -->
+
       <ul class="uploaded-file-list">
         <li *ngFor="let file of uploadedFiles" class="uploaded-file-item">
           <a [href]="file.data" [download]="file.name" title="{{ file.name }}">{{ file.name }}</a>
@@ -140,7 +170,7 @@
     </div>    
 
 
-    <!-- 更新履歴 -->
+
     <div class="form-group history-toggle">
       <div class="toggle-row">
         <button class="toggle-button" (click)="toggleHistory()">

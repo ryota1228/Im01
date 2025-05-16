@@ -4,7 +4,6 @@ export type NotificationType =
   | 'update'
   | 'comment'
   | 'deadline'
-  | 'progress';
 
 export interface Notification {
   id: string;

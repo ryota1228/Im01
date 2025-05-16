@@ -41,9 +41,16 @@ export class AuthService {
     return credential;
   }
 
-  loginWithGoogle(): Promise<UserCredential> {
+  async loginWithGoogle(): Promise<UserCredential> {
     const provider = new GoogleAuthProvider();
-    return signInWithPopup(this.auth, provider);
+    const credential = await signInWithPopup(this.auth, provider);
+    const user = credential.user;
+  
+    if (user) {
+      await this.userService.createUserProfile(user); // これが Firestore に displayName 保存してくれる想定
+    }
+  
+    return credential;
   }
 
   logout(): Promise<void> {

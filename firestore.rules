@@ -1,8 +1,20 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ✅ 目標（goals/goal）への読み書きを一時許可（開発中のみ！）
+    match /projects/{projectId}/sections/{sectionId}/goals/{goalId} {
+      allow read, write: if true;
+    }
+
+    // ✅ 通知（ユーザーごと）
+    match /users/{userId}/notifications/{notifId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // ✅ その他すべてのドキュメント（開発中の全開放）
     match /{document=**} {
-      allow read, write: if true; // ← 全開放（開発中のみ！）
+      allow read, write: if true;
     }
   }
 }

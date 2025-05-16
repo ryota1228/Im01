@@ -19,7 +19,8 @@ import {
   orderBy,
   arrayRemove,
   arrayUnion,
-  Timestamp
+  Timestamp,
+  serverTimestamp
 } from '@angular/fire/firestore';
 import { Injectable, inject } from '@angular/core';
 import { Observable, tap } from 'rxjs';
@@ -178,7 +179,7 @@ export class FirestoreService {
     const userPromises = userIds.map(uid =>
       this.getDocument<{ displayName: string }>(`users/${uid}`).then(data => ({
         uid,
-        displayName: data?.displayName ?? '未登録ユーザー'
+        displayName: data?.displayName ?? '未設定'
       }))
     );
     return Promise.all(userPromises);
@@ -385,8 +386,7 @@ export class FirestoreService {
       new: 'newTask',
       update: 'taskUpdate',
       comment: 'comment',
-      deadline: 'deadline',
-      progress: 'progress'
+      deadline: 'deadline'
     };
   
     const key = typeToKeyMap[type];
@@ -524,9 +524,15 @@ async getAllNotifications(uid: string): Promise<Notification[]> {
 async getTaskById(projectId: string, taskId: string): Promise<Task | null> {
   const docRef = doc(this.firestore, `projects/${projectId}/tasks/${taskId}`);
   const snap = await getDoc(docRef);
+
+  console.log('[getTaskById] projectId:', projectId);
+  console.log('[getTaskById] taskId:', taskId);
+  console.log('[getTaskById] exists:', snap.exists());
+  console.log('[getTaskById] data:', snap.data());
+
   return snap.exists() ? { id: snap.id, ...snap.data() } as Task : null;
-  
 }
+
 
 async getUserAttendanceStatusSafe(uid: string): Promise<string> {
   const ref = doc(this.firestore, `users/${uid}`);
@@ -881,5 +887,114 @@ async togglePinProjectSafe(uid: string, projectId: string): Promise<void> {
     });
   }
 
+  async addChatLogAndNotify(params: {
+    projectId: string;
+    taskId: string;
+    from: string;
+    to: string;
+    message: string;
+  }): Promise<void> {
+    const { projectId, taskId, from, to, message } = params;
+  
+    const notifRef = collection(this.firestore, `users/${to}/notifications`);
+    const notifDoc = doc(notifRef);
+    const notifId = notifDoc.id;
+
+    const chatRef = collection(this.firestore, `projects/${projectId}/tasks/${taskId}/chatLogs`);
+    await addDoc(chatRef, {
+      message,
+      from,
+      to,
+      relatedNotificationId: notifId,
+      createdAt: serverTimestamp()
+    });
+  
+
+    await setDoc(notifDoc, {
+      type: 'chat',
+      projectId,
+      taskId,
+      message,
+      from,
+      to,
+      isRead: false,
+      createdAt: serverTimestamp()
+    });
+  }
+  
+
+  async getUserChatNotifications(uid: string): Promise<any[]> {
+    const notifRef = collection(this.firestore, `users/${uid}/notifications`);
+    const q = query(notifRef, where('type', '==', 'chat'), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+  
+    const results = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        message: data['message'],
+        from: data['from'],
+        to: data['to'],
+        projectId: data['projectId'] ?? null,
+        taskId: data['taskId'] ?? null,
+        createdAt: data['createdAt']?.toDate?.() ?? null,
+        isRead: data['isRead'] ?? false
+      };
+    });
+  
+    console.log('[Firestore通知]', results);
+    return results;
+    
+  }
+  
+
+  async getUserDisplayNameMap(uids: string[]): Promise<{ [uid: string]: string }> {
+    const result: { [uid: string]: string } = {};
+    const promises = uids.map(async uid => {
+      const snap = await getDoc(doc(this.firestore, `users/${uid}`));
+      if (snap.exists()) result[uid] = snap.data()['displayName'] ?? '(no name)';
+    });
+    await Promise.all(promises);
+    return result;
+  }
+
+  async getTaskTitleMap(taskIds: string[]): Promise<{ [taskId: string]: string }> {
+    const result: { [taskId: string]: string } = {};
+  
+    const promises = taskIds.map(async id => {
+      const taskSnap = await getDoc(doc(this.firestore, `tasks/${id}`));
+      if (taskSnap.exists()) {
+        result[id] = taskSnap.data()['title'] ?? '(no title)';
+      }
+    });
+  
+    await Promise.all(promises);
+    return result;
+  }
+
+  async getTaskTitleMapFromProjects(
+    taskList: { projectId: string; taskId: string }[]
+  ): Promise<{ [taskId: string]: string }> {
+    const result: { [taskId: string]: string } = {};
+  
+    const promises = taskList.map(async ({ projectId, taskId }) => {
+      const ref = doc(this.firestore, `projects/${projectId}/tasks/${taskId}`);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        result[taskId] = snap.data()['title'] ?? '(no title)';
+      }
+    });
+  
+    await Promise.all(promises);
+    return result;
+  }
+
+
+  async getChatLogs(projectId: string, taskId: string): Promise<any[]> {
+    const ref = collection(this.firestore, `projects/${projectId}/tasks/${taskId}/chatLogs`);
+    const q = query(ref, orderBy('createdAt', 'asc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
   
 }

@@ -20,7 +20,7 @@ export class UserService {
     const userData = {
       uid: user.uid,
       email: user.email,
-      displayName: user.displayName ?? null,
+      displayName: user.displayName ?? '未設定',
       photoURL: user.photoURL ?? null,
       role: 'user',
       createdAt: Date.now(),
@@ -36,4 +36,6 @@ export class UserService {
   setUserProfile(profile: UserProfile): Promise<void> {
     return this.firestore.setDocument(`users/${profile.uid}`, profile);
   }
+
+  
 }

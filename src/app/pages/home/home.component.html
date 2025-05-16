@@ -95,6 +95,26 @@
 
         </div>
       </div>
+
+      <div class="section">
+        <h2>チャット通知</h2>
+        <div class="section-scrollable">
+          <ul>
+              <li
+              *ngFor="let notif of chatNotifications"
+              [class.unread]="!notif.isRead"
+              (click)="onClickChatNotification(notif)"
+            >
+              <span *ngIf="!notif.isRead">🟠</span>
+              <strong>{{ notif.message }}</strong>（{{ notif.fromName }}/{{ notif.createdAt | date:'shortTime' }}）
+            </li>
+          </ul>
+        </div>
+      </div>
+      
+      
+
+
     </div>
   </div>
 </div>

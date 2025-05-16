@@ -41,6 +41,10 @@ export class HomeComponent implements OnInit {
   showUnreadOnly: boolean = false;
   typeFilter: { [key in Notification['type']]?: boolean } = {};
 
+  chatNotifications: any[] = [];
+
+
+
   
   constructor(
     private firestoreService: FirestoreService,
@@ -50,15 +54,19 @@ export class HomeComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    const user = await this.authService.getCurrentUser();
-    if (!user) return;
-    this.uid = user.uid;
+  const user = await this.authService.getCurrentUser();
+  if (!user) return;
+  this.uid = user.uid;
 
-    this.startClock();
-    await this.loadAttendanceStatus();
-    await this.loadNotifications();
-    await this.loadData();
-  }
+  this.startClock();
+  await this.loadAttendanceStatus();
+  await this.loadNotifications();
+  await this.loadData();
+  await this.loadChatNotifications();
+
+  console.log('[読み込み完了後] chatNotifications =', this.chatNotifications);
+}
+
 
   startClock() {
     setInterval(() => {
@@ -122,13 +130,14 @@ export class HomeComponent implements OnInit {
       dueDate: this.toDate(t.dueDate),
       updatedAt: this.toDate(t.updatedAt)
     }));
-
+  
+    this.taskPanelService.setAvailableTasks(allTasks);
+  
     const now = new Date();
-
     this.todaysTasks = allTasks.filter(t => {
       return t.dueDate && t.dueDate.toDateString() === now.toDateString();
     });
-
+  
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     this.delayedTasks = allTasks.filter(task => {
@@ -140,6 +149,7 @@ export class HomeComponent implements OnInit {
       );
     });
   }
+  
 
   async togglePin(projectId: string) {
     await this.firestoreService.togglePinProjectSafe(this.uid, projectId);
@@ -150,11 +160,14 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/project', projectId]);
   }
 
-  openTask(task: Task) {
-    if (task.projectId && task.id) {
-      this.taskPanelService.open(task.projectId, task.id);
+  openTask(input: Task | { projectId: string; taskId: string }): void {
+    const projectId = 'projectId' in input ? input.projectId : input.projectId;
+    const taskId = 'taskId' in input ? input.taskId : input.id;
+  
+    if (projectId && taskId) {
+      this.taskPanelService.open(projectId, taskId);
     }
-  }
+  }  
 
   async addTaskToToday() {
     if (!this.newTaskTitle.trim()) return;
@@ -241,6 +254,60 @@ export class HomeComponent implements OnInit {
       console.warn('通知に projectId または taskId が不足しています');
     }
   }
+
+  async loadChatNotifications() {
+    const rawNotifs = await this.firestoreService.getUserChatNotifications(this.uid);
+    console.log('[DEBUG] rawNotifs', rawNotifs);
+  
+    const fromUids = [...new Set(rawNotifs.map(n => n.from))];
+    const userMap = await this.firestoreService.getUserDisplayNameMap(fromUids);
+  
+    this.chatNotifications = rawNotifs.map(n => ({
+      id: n.id,
+      taskId: n.taskId,
+      projectId: n.projectId,
+      message: n.message,
+      from: n.from,
+      fromName: userMap[n.from] ?? '(不明ユーザー)',
+      createdAt: n.createdAt,
+      isRead: n.isRead
+    }));
+  
+    console.log('[読み込み完了後] chatNotifications =', this.chatNotifications);
+  }
+  
+  
+  async onClickChatNotification(notif: any) {
+    console.log('[onClickChatNotification]', notif);
+  
+    if (!notif.isRead && notif.id) {
+      const notifPath = `users/${this.uid}/notifications/${notif.id}`;
+      await this.firestoreService.updateDocument(notifPath, { isRead: true });
+    }
+  
+    if (!notif.projectId || !notif.taskId) {
+      console.warn('[onClickChatNotification] projectId または taskId が不足しています');
+      return;
+    }
+  
+    // 🔻 ここで Firestore から取得してパネルを開く（方法②）
+    const task = await this.firestoreService.getTaskById(notif.projectId, notif.taskId);
+    console.log('[onClickChatNotification] Firestoreから取得したtask:', task);
+  
+    if (task) {
+      this.taskPanelService.openPanel(task, notif.projectId); // ← これでOK
+    } else {
+      console.warn('[onClickChatNotification] タスクが取得できませんでした');
+    }
+  
+    await this.loadChatNotifications(); // ← これで未読マークも消える
+  }
+  
+  
+  
+  
+  
+  
   
   
 }

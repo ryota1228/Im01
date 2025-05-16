@@ -8,9 +8,12 @@ export class TaskPanelService {
   close: any;
 
   open(projectId: string, taskId: string) {
-    this.projectIdSubject.next(projectId);
-    this.selectedTaskSubject.next({ id: taskId } as Task);
-    this.isOpenSubject.next(true);
+    const task = this.getTaskById(taskId);
+    if (task) {
+      this.openPanel(task, projectId);
+    } else {
+      console.warn('[TaskPanelService] 指定されたタスクが見つかりません:', taskId);
+    }
   }
   
 

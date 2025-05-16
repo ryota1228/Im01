@@ -247,3 +247,22 @@ li {
   font-size: 13px;
   color: #555;
 }
+
+.chat-notifications ul {
+  list-style: none;
+  padding: 0;
+}
+.chat-notifications li {
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.chat-notifications li.unread {
+  background-color: #e3f2fd; 
+  font-weight: bold;
+}
+
+li.unread {
+  font-weight: bold;
+}
+
+

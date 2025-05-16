@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>ユーザー名の編集</h2>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>新しいユーザー名</mat-label>
+    <input matInput formControlName="displayName" />
+    <mat-error *ngIf="form.get('displayName')?.hasError('required')">
+      ユーザー名は必須です
+    </mat-error>
+    <mat-error *ngIf="form.get('displayName')?.hasError('maxlength')">
+      最大30文字までです
+    </mat-error>
+  </mat-form-field>
+
+  <div class="dialog-actions">
+    <button mat-button type="button" (click)="cancel()">キャンセル</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">保存</button>
+  </div>
+</form>

@@ -81,12 +81,22 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
   attachments: Attachment[] = [];
   descriptionControl = new FormControl('');
 
-
   isBlockingDialogOpen: boolean = false;
 
   projectTitle: string = '';
   selectedFile: File | null = null;
   uploadedFiles: DisplayedAttachment[] = [];
+
+  chatInput: string = '';
+  currentUserUid: string = '';
+
+  mentionCandidates: { uid: string; displayName: string }[] = [];
+
+  chatLogs: any[] = [];
+
+  chatLogVisible = false;
+
+  showChatLog: boolean = false;
 
 
   quillModules: QuillModules = {
@@ -154,6 +164,7 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
     const user = await this.authService.getCurrentUser();
     const uid = user?.uid;
     this.currentUserName = user?.displayName ?? '';
+    this.currentUserUid = uid ?? '';
     this.isViewerUser = true;
   
     if (this.projectId && uid) {
@@ -203,7 +214,7 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
         return;
       }
     }
-
+  
     if (this.task?.id) {
       const fileSnap = await getDocs(collection(this.firestore, `tasks/${this.task.id}/files`));
       this.uploadedFiles = fileSnap.docs.map(doc => {
@@ -235,9 +246,10 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
   
     const allMembers = await this.firestoreService.getProjectMembers(this.projectId);
   
-    this.members = allMembers
-      .filter(m => ['owner', 'editor'].includes(m.role))
-      .map(m => ({ uid: m.uid, displayName: m.displayName }));
+    this.members = allMembers.map(m => ({
+      uid: m.uid,
+      displayName: m.displayName
+    }));
   
     this.historyUserMap = new Map<string, string>();
     for (const m of allMembers) {
@@ -246,7 +258,10 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
   
     const title = await this.firestoreService.getProjectTitleById(this.projectId);
     this.projectTitle = title ?? '（不明なプロジェクト）';
+
+    await this.loadChatLogs();
   }
+  
 
   
   async ngAfterViewInit(): Promise<void> {
@@ -369,7 +384,9 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
         panelClass: ['error-snackbar']
       });
     }
-  }  
+
+    
+  }
   
 
   private generateHistoryEntries(before: Task, after: Partial<Task>): TaskHistoryEntry[] {
@@ -690,4 +707,70 @@ export class TaskdetailComponent implements OnInit, AfterViewInit {
     await deleteDoc(doc(this.firestore, `tasks/${this.task.id}/files/${fileId}`));
     this.uploadedFiles = this.uploadedFiles.filter(file => file.id !== fileId);
   }
+
+  async sendChatMessage() {
+    const input = this.chatInput.trim();
+    const match = input.match(/^@(\S+)\s+(.+)/);
+    if (!match) {
+      console.warn('形式エラー: @宛先 メッセージ');
+      return;
+    }
+  
+    const [_, mentionName, message] = match;
+    const targetMember = this.members.find(m => m.displayName === mentionName);
+    if (!targetMember) {
+      console.warn('宛先ユーザーが見つかりません:', mentionName);
+      return;
+    }
+  
+    try {
+      await this.firestoreService.addChatLogAndNotify({
+        projectId: this.projectId,
+        taskId: this.task.id,
+        from: this.currentUserUid,
+        to: targetMember.uid,
+        message
+      });
+  
+      this.chatInput = '';
+
+      await this.loadChatLogs();
+  
+    } catch (err) {
+      console.error('チャット送信エラー:', err);
+    }
+  }
+
+  onChatInput(): void {
+    const match = this.chatInput.match(/@(\w*)$/);
+    if (match) {
+      const keyword = match[1].toLowerCase();
+      this.mentionCandidates = this.members.filter(m =>
+        m.displayName.toLowerCase().startsWith(keyword)
+      );
+    } else {
+      this.mentionCandidates = [];
+    }
+  }
+  
+  selectMention(user: { uid: string; displayName: string }): void {
+    this.chatInput = this.chatInput.replace(/@(\w*)$/, `@${user.displayName} `);
+    this.mentionCandidates = [];
+  }
+
+  async loadChatLogs() {
+    if (!this.projectId || !this.task?.id) return;
+    this.chatLogs = await this.firestoreService.getChatLogs(this.projectId, this.task.id);
+  }
+
+  getChatDisplayName(uid: string): string {
+    const user = this.members.find(m => m.uid === uid);
+    return user?.displayName || uid;
+  }
+
+  getChatUserName(uid: string): string {
+    const user = this.members.find(m => m.uid === uid);
+    return user?.displayName ?? uid;
+  }
+  
 }

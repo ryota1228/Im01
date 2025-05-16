@@ -5,6 +5,7 @@
     <div class="task-panel-overlay" (click)="closePanel()">
       <app-taskdetail
         #taskDetailComponent
+        exportAs="taskDetailComponent"
         class="task-detail-panel"
         [task]="selectedTask"
         [projectId]="projectId!"
